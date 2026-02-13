@@ -1,8 +1,15 @@
+function normalizeUrl(raw: string, fallback: string): string {
+  const value = (raw || "").trim();
+  if (!value) return fallback;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
+}
+
 export const config = {
   supabaseUrl: process.env.SUPABASE_URL || "",
   supabaseAnonKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "",
   supabaseServiceRole: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-  workerControlUrl: process.env.WORKER_CONTROL_URL || "http://127.0.0.1:4100",
+  workerControlUrl: normalizeUrl(process.env.WORKER_CONTROL_URL || "", "http://127.0.0.1:4100"),
   workerControlSecret: process.env.WORKER_CONTROL_SECRET || "",
   webhookSecret: process.env.TRADINGVIEW_WEBHOOK_SECRET || "",
   webhookMaxSkewSeconds: Number(process.env.WEBHOOK_MAX_SKEW_SECONDS || "600"),
