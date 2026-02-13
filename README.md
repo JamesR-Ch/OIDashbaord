@@ -59,6 +59,10 @@ Run in order:
   - `SYMBOL_SESSION_MODE_BTCUSD`
   - Values: `auto`, `always_open`, `always_closed`, `fx_24_5`
 - Data retention defaults: 45 days (structured), 1 day (artifacts).
+- Additional retention defaults:
+  - `job_runs`: 30 days
+  - `auth_login_lockouts`: 30 days
+  - `cme_series_links`: 90 days
 - CME snapshot deltas are computed against the previous snapshot of the same `view_type` and same `series_name`.
 - Top 3 strike changes are ranked by positive `total_change` only (largest increase first).
 - CME series follows the currently selected state embedded in the saved QuikStrike URL.

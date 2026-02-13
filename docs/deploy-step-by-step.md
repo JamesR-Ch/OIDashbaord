@@ -129,6 +129,9 @@ Set environment variables in `worker` service:
 - `CME_HOLIDAY_CLOSURES=`
 - `CME_SESSION_FORCE_OPEN=false`
 - `WEBHOOK_LOG_RETENTION_DAYS=7`
+- `JOB_RUNS_RETENTION_DAYS=30`
+- `AUTH_LOCKOUTS_RETENTION_DAYS=30`
+- `CME_SERIES_LINKS_RETENTION_DAYS=90`
 
 ## 8. Deploy and Wait Healthy
 

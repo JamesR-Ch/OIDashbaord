@@ -45,6 +45,9 @@ Set in both Railway services where relevant:
 - `CME_HOLIDAY_CLOSURES` (worker, optional CSV of `YYYY-MM-DD`)
 - `CME_SESSION_FORCE_OPEN` (worker, `false` in production)
 - `WEBHOOK_LOG_RETENTION_DAYS` (worker)
+- `JOB_RUNS_RETENTION_DAYS` (worker, default `30`)
+- `AUTH_LOCKOUTS_RETENTION_DAYS` (worker, default `30`)
+- `CME_SERIES_LINKS_RETENTION_DAYS` (worker, default `90`)
 
 ## Build / Start
 
@@ -106,6 +109,10 @@ order by status_code;
 - At 05:30 GMT+7, daily CME URL must be updated in `/settings`.
 - If not updated, worker writes skipped `cme_30m` job runs with reason metadata.
 - Retention keeps 45-day structured data and 1-day artifacts.
+- Additional retention:
+  - `job_runs`: 30 days (configurable)
+  - `auth_login_lockouts`: 30 days (configurable)
+  - `cme_series_links`: 90 days (configurable)
 - Webhook replay and rate-limit protections depend on migrations `004` and `005`.
 - Worker health endpoints:
   - `/health`

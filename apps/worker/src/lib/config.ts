@@ -49,5 +49,8 @@ export const workerConfig = {
   cmeExtractRetryDelayMs: Number(process.env.CME_EXTRACT_RETRY_DELAY_MS || "1200"),
   relationStaleMinutes: Number(process.env.RELATION_STALE_MINUTES || "35"),
   cmeStaleMinutes: Number(process.env.CME_STALE_MINUTES || "35"),
+  jobRunsRetentionDays: Number(process.env.JOB_RUNS_RETENTION_DAYS || "30"),
+  authLockoutsRetentionDays: Number(process.env.AUTH_LOCKOUTS_RETENTION_DAYS || "30"),
+  cmeSeriesLinksRetentionDays: Number(process.env.CME_SERIES_LINKS_RETENTION_DAYS || "90"),
   symbolSessionModes: SYMBOL_SESSION_MODES
 };
