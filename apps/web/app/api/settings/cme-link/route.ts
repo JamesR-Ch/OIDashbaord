@@ -87,7 +87,8 @@ export async function PUT(req: NextRequest) {
     trade_date_bkk: parsed.data.effective_date_bkk,
     url: parsed.data.url,
     status: "active",
-    updated_by: authCtx.email || authCtx.userId
+    updated_by: authCtx.email || authCtx.userId,
+    updated_at: DateTime.utc().toISO()
   };
 
   if (!isAllowedCmeUrl(row.url)) {
