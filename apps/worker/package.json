@@ -1,0 +1,35 @@
+{
+  "name": "@oid/worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "run:once": "tsx src/run-once.ts",
+    "run:once:relation": "tsx src/run-once.ts relation",
+    "run:once:cme": "tsx src/run-once.ts cme",
+    "run:once:retention": "tsx src/run-once.ts retention",
+    "sanity": "tsx src/sanity-check.ts",
+    "test": "npm run build && node dist/apps/worker/src/tests/cme-change.test.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo 'No lint configured for worker'"
+  },
+  "dependencies": {
+    "@oid/shared": "0.1.0",
+    "@supabase/supabase-js": "^2.48.0",
+    "dotenv": "^16.4.7",
+    "luxon": "^3.5.0",
+    "node-cron": "^3.0.3",
+    "pino": "^9.6.0",
+    "playwright": "^1.50.0"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.4.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/node": "^22.10.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+dist
+coverage
+.vercel
+.railway
+.env
+.env.*
+!.env.example
+playwright-report
+test-results
+.DS_Store
+*.log

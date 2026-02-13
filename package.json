@@ -1,0 +1,23 @@
+{
+  "name": "oidashboard",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @oid/web && npm run build -w @oid/worker",
+    "clean:web": "rm -rf apps/web/.next",
+    "clean:worker": "rm -rf apps/worker/dist",
+    "clean": "npm run clean:web && npm run clean:worker",
+    "dev": "npm run dev -w @oid/web",
+    "dev:web": "npm run dev -w @oid/web",
+    "dev:worker": "npm run dev -w @oid/worker",
+    "test:shared": "npm run test -w @oid/shared",
+    "test:worker": "npm run test -w @oid/worker",
+    "test": "npm run test:shared && npm run test:worker",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "npm run lint -w @oid/web && npm run lint -w @oid/worker"
+  }
+}
