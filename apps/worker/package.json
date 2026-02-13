@@ -12,7 +12,7 @@
     "sanity": "tsx src/sanity-check.ts",
     "test": "npm run build && node dist/apps/worker/src/tests/cme-change.test.js",
     "build": "npm run build -w @oid/shared && tsc -p tsconfig.json",
-    "start": "node dist/apps/worker/src/index.js",
+    "start": "node --experimental-specifier-resolution=node dist/apps/worker/src/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo 'No lint configured for worker'"
   },
