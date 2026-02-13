@@ -10,6 +10,9 @@ COPY apps/worker/package.json apps/worker/package.json
 
 RUN npm ci
 
+# Ensure browser binary is always present for the exact Playwright version in package-lock.
+RUN npx playwright install chromium
+
 # Copy source and build worker (includes shared build via worker script).
 COPY packages/shared packages/shared
 COPY apps/worker apps/worker
