@@ -16,9 +16,7 @@ const nextPublicSupabasePublishableKey =
   "";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    typedRoutes: true
-  },
+  typedRoutes: true,
   env: {
     NEXT_PUBLIC_SUPABASE_URL: nextPublicSupabaseUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: nextPublicSupabasePublishableKey
