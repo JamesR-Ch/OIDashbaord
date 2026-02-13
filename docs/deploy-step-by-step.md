@@ -74,24 +74,28 @@ In `web` service, set:
 `npm run start -w @oid/web`
 
 Set environment variables in `web` service:
+
+Minimal required:
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SECRET_KEY`
 - `TRADINGVIEW_WEBHOOK_SECRET`
+- `WORKER_CONTROL_SECRET=<same value as worker>`
+- `WORKER_CONTROL_URL=<worker internal URL>`
+- `WEBHOOK_REQUIRE_SIGNATURE=true` (security baseline)
+- `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=false` (security baseline)
+
+Optional tuning (safe to skip; defaults exist in code):
 - `WEBHOOK_MAX_SKEW_SECONDS=600`
 - `WEBHOOK_REPLAY_TTL_MINUTES=120`
 - `WEBHOOK_RATE_LIMIT_PER_MINUTE=180`
 - `WEBHOOK_MAX_BODY_BYTES=16384`
-- `WEBHOOK_REQUIRE_SIGNATURE=true` (recommended production)
-- `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=false` (recommended production)
 - `RUN_NOW_COOLDOWN_SECONDS=20`
 - `CME_LINK_UPDATE_COOLDOWN_SECONDS=20`
 - `AUTH_SESSION_RATE_LIMIT_PER_MINUTE=30`
 - `ADMIN_API_RATE_LIMIT_PER_MINUTE=60`
 - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS=5`
 - `AUTH_LOGIN_LOCK_MINUTES=15`
-- `WORKER_CONTROL_SECRET=<same value as worker>`
-- `WORKER_CONTROL_URL=<worker internal URL>`
 - `NEXT_PUBLIC_APP_NAME=OIDashboard`
 
 Important:
@@ -108,10 +112,14 @@ In `worker` service, set:
 `npm run start -w @oid/worker`
 
 Set environment variables in `worker` service:
+
+Minimal required:
 - `SUPABASE_URL`
 - `SUPABASE_SECRET_KEY`
-- `WORKER_CONTROL_PORT=4100`
 - `WORKER_CONTROL_SECRET=<same value as web>`
+
+Optional tuning (safe to skip; defaults exist in code):
+- `WORKER_CONTROL_PORT=4100`
 - `WORKER_CRON_RELATION=*/30 * * * *`
 - `WORKER_CRON_CME=*/30 * * * *`
 - `WORKER_RETENTION_CRON=15 6 * * *`
