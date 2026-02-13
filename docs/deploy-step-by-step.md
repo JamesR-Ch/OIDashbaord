@@ -106,10 +106,12 @@ Important:
 
 In `worker` service, set:
 - Root Directory: repo root (default)
-- Build Command:
-`npm run build -w @oid/worker`
-- Start Command:
-`npm run start -w @oid/worker`
+- Recommended for Playwright stability:
+  - Use Dockerfile deploy with `apps/worker/Dockerfile`
+  - Leave Build/Start commands empty when using Dockerfile
+- If not using Dockerfile:
+  - Build Command: `npm run build -w @oid/worker`
+  - Start Command: `npm run start -w @oid/worker`
 
 Set environment variables in `worker` service:
 
