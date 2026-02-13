@@ -30,7 +30,7 @@ for (const symbol of Object.keys(SYMBOL_SESSION_MODES) as SymbolCode[]) {
 export const workerConfig = {
   supabaseUrl: process.env.SUPABASE_URL || "",
   supabaseServiceRole: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-  controlPort: Number(process.env.WORKER_CONTROL_PORT || "4100"),
+  controlPort: Number(process.env.PORT || process.env.WORKER_CONTROL_PORT || "4100"),
   controlSecret: process.env.WORKER_CONTROL_SECRET || "",
   cmeSessionTimezone: process.env.CME_SESSION_TIMEZONE || "America/Chicago",
   cmeHolidayClosures: (process.env.CME_HOLIDAY_CLOSURES || "")
