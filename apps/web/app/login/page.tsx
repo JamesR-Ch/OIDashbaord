@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TopNav } from "../../components/nav";
 import { getBrowserSupabaseClient } from "../../lib/supabase-browser";
@@ -11,23 +11,49 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [nextPath, setNextPath] = useState("/settings");
+  const syncingRef = useRef(false);
+  const lastSyncedTokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const rawNextPath = params.get("next") || "/settings";
+    setNextPath(rawNextPath.startsWith("/") ? rawNextPath : "/settings");
+  }, []);
 
   useEffect(() => {
     const supabase = getBrowserSupabaseClient();
 
+    async function syncThenRedirect(accessToken: string) {
+      if (!accessToken) return;
+      if (syncingRef.current) return;
+      if (lastSyncedTokenRef.current === accessToken) return;
+
+      syncingRef.current = true;
+      const ok = await syncServerSession(accessToken);
+      syncingRef.current = false;
+
+      if (!ok) {
+        setMessage("Session sync failed (likely rate-limited). Please wait a few seconds and try again.");
+        return;
+      }
+
+      lastSyncedTokenRef.current = accessToken;
+      router.replace(nextPath as any);
+    }
+
     // Handle OAuth return and existing sessions.
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.access_token) {
-        void syncServerSession(data.session.access_token);
-        router.replace("/settings");
+        void syncThenRedirect(data.session.access_token);
       }
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.access_token) {
-        void syncServerSession(session.access_token);
-        router.replace("/settings");
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.access_token) {
+        void syncThenRedirect(session.access_token);
       } else if (event === "SIGNED_OUT") {
+        lastSyncedTokenRef.current = null;
         void clearServerSession();
       }
     });
@@ -35,7 +61,7 @@ export default function LoginPage() {
     return () => {
       subscription.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [nextPath, router]);
 
   async function onSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -50,10 +76,17 @@ export default function LoginPage() {
     const supabase = getBrowserSupabaseClient();
     const { data } = await supabase.auth.getSession();
     if (data.session?.access_token) {
-      await syncServerSession(data.session.access_token);
+      const ok = await syncServerSession(data.session.access_token);
+      if (!ok) {
+        setMessage("Sign-in succeeded, but session sync is rate-limited. Please wait a few seconds and retry.");
+        return;
+      }
+      lastSyncedTokenRef.current = data.session.access_token;
+      router.replace(nextPath as any);
+      return;
     }
 
-    setMessage("Signed in successfully. You can now open /settings.");
+    setMessage("Signed in successfully.");
     setPassword("");
   }
 

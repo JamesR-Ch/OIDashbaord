@@ -20,6 +20,16 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const token = readBearer(req);
+  if (!token) {
+    return NextResponse.json({ error: "missing bearer token" }, { status: 401 });
+  }
+
+  const currentCookieToken = req.cookies.get("oid_access_token")?.value;
+  if (currentCookieToken && currentCookieToken === token) {
+    return NextResponse.json({ ok: true, reused: true });
+  }
+
   const clientIp = getClientIp(req);
   const rate = checkRateLimit(
     `auth_session:${clientIp}`,
@@ -31,11 +41,6 @@ export async function POST(req: NextRequest) {
       { error: "too many auth session requests", retry_after_ms: rate.retryAfterMs },
       { status: 429 }
     );
-  }
-
-  const token = readBearer(req);
-  if (!token) {
-    return NextResponse.json({ error: "missing bearer token" }, { status: 401 });
   }
 
   try {
