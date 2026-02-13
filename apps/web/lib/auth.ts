@@ -21,6 +21,10 @@ function extractBearerToken(req: NextRequest): string | null {
   return token;
 }
 
+function extractCookieToken(req: NextRequest): string | null {
+  return req.cookies.get("oid_access_token")?.value || null;
+}
+
 export async function getAuthContextFromToken(
   token: string
 ): Promise<{ userId: string; role: AppRole; email: string | null }> {
@@ -50,9 +54,9 @@ export async function getAuthContextFromToken(
 }
 
 export async function getAuthContext(req: NextRequest): Promise<{ userId: string; role: AppRole; email: string | null }> {
-  const token = extractBearerToken(req);
+  const token = extractBearerToken(req) || extractCookieToken(req);
   if (!token) {
-    throw new AuthError(401, "missing bearer token");
+    throw new AuthError(401, "missing authentication token");
   }
   return getAuthContextFromToken(token);
 }

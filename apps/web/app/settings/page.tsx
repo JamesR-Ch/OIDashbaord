@@ -11,7 +11,6 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import { Table, TBody, TD, TH, THead, TR } from "../../components/ui/table";
-import { getAccessToken } from "../../lib/auth-client";
 import { fmtDateTime } from "../../lib/format";
 
 interface LinkState {
@@ -105,20 +104,14 @@ export default function SettingsPage() {
   const [runningJob, setRunningJob] = useState<"relation" | "cme" | "both" | "">("");
 
   async function loadCurrent() {
-    const token = await getAccessToken();
-    if (!token) {
-      setMessage("No active session. Please sign in at /login.");
+    const res = await fetch("/api/settings/cme-link", {
+      cache: "no-store"
+    });
+    const json = await res.json();
+    if (res.status === 401) {
       router.replace("/login");
       return;
     }
-
-    const res = await fetch("/api/settings/cme-link", {
-      cache: "no-store",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    const json = await res.json();
     if (res.status === 403) {
       router.replace("/overview");
       return;
@@ -132,15 +125,13 @@ export default function SettingsPage() {
   }
 
   async function loadSystemStatus() {
-    const token = await getAccessToken();
-    if (!token) return;
-
     const res = await fetch("/api/settings/system", {
-      cache: "no-store",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      cache: "no-store"
     });
+    if (res.status === 401) {
+      router.replace("/login");
+      return;
+    }
     if (res.status === 403) {
       router.replace("/overview");
       return;
@@ -161,17 +152,10 @@ export default function SettingsPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage("saving...");
-    const token = await getAccessToken();
-    if (!token) {
-      setMessage("No active session. Please sign in at /login.");
-      return;
-    }
-
     const res = await fetch("/api/settings/cme-link", {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         url,
@@ -180,6 +164,14 @@ export default function SettingsPage() {
     });
 
     const json = await res.json();
+    if (res.status === 401) {
+      router.replace("/login");
+      return;
+    }
+    if (res.status === 403) {
+      router.replace("/overview");
+      return;
+    }
     if (!res.ok) {
       setMessage(`error: ${json.error || "failed"}`);
       return;
@@ -194,23 +186,25 @@ export default function SettingsPage() {
     setRunningJob(job);
     setRunNowMessage(`running ${job}...`);
 
-    const token = await getAccessToken();
-    if (!token) {
-      setRunNowMessage("No active session. Please sign in at /login.");
-      setRunningJob("");
-      return;
-    }
-
     const res = await fetch("/api/settings/run-now", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ job })
     });
 
     const json = await res.json();
+    if (res.status === 401) {
+      router.replace("/login");
+      setRunningJob("");
+      return;
+    }
+    if (res.status === 403) {
+      router.replace("/overview");
+      setRunningJob("");
+      return;
+    }
     if (!res.ok) {
       setRunNowMessage(`error: ${json.error || "failed"}`);
       setRunningJob("");
