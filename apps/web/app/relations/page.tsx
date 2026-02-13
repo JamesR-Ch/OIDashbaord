@@ -1,87 +1,130 @@
 "use client";
 
-import { TopNav } from "../../components/nav";
-import { SectionCard } from "../../components/section";
+import { AppShell } from "../../components/layout/app-shell";
+import { PageHeader } from "../../components/layout/page-header";
+import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Table, TBody, TD, TH, THead, TR } from "../../components/ui/table";
+import { ErrorState, LoadingState } from "../../components/dashboard/states";
 import { useOverviewData } from "../../lib/use-overview-data";
+import { fmtDateTime, fmtNum } from "../../lib/format";
+import { toRelationsViewModel } from "../../lib/view-models";
 
 export const dynamic = "force-dynamic";
 
 export default function RelationsPage() {
   const { data, loading, error } = useOverviewData(15000);
-  const relation = data?.relation;
-  const fmt2 = (value: unknown) =>
-    typeof value === "number" && Number.isFinite(value) ? value.toFixed(2) : "-";
+  const vm = toRelationsViewModel(data);
 
   return (
-    <main className="container">
-      <TopNav />
-      {loading ? <p style={{ color: "var(--muted)", marginBottom: 10 }}>Loading data...</p> : null}
-      {error ? <p className="badge-warn" style={{ marginBottom: 10 }}>Data load error: {error}</p> : null}
-      <SectionCard title="Relations" subtitle="30-minute pair analytics">
-        {!relation ? (
-          <p>No relation data.</p>
-        ) : (
-          <>
-            <p style={{ color: "var(--muted)" }}>Window: {new Date(relation.window_start_bkk).toLocaleString()} - {new Date(relation.window_end_bkk).toLocaleString()}</p>
-            <p style={{ color: "var(--muted)", marginTop: 6 }}>
-              Open symbols: {relation.quality_flags?.open_symbols?.length ? relation.quality_flags.open_symbols.join(", ") : "-"} | Closed symbols: {relation.quality_flags?.closed_symbols?.length ? relation.quality_flags.closed_symbols.join(", ") : "-"}
-            </p>
-            <h4 style={{ marginTop: 14 }}>Per Symbol</h4>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Current</th>
-                  <th>Previous</th>
-                  <th>Abs</th>
-                  <th>%</th>
-                  <th>Points</th>
-                  <th>Degraded</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(relation.symbol_returns || []).map((row: any) => (
-                  <tr key={row.symbol}>
-                    <td>{row.symbol}</td>
-                    <td>{fmt2(row.current_price)}</td>
-                    <td>{fmt2(row.previous_price)}</td>
-                    <td>{fmt2(row.abs_change)}</td>
-                    <td>{fmt2(row.pct_change)}</td>
-                    <td>{row.points_observed}</td>
-                    <td>{row.degraded ? "yes" : "no"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <AppShell>
+      <PageHeader
+        title="Relations"
+        subtitle="30-minute quantitative relation engine for XAUUSD, THBUSD, and BTCUSD."
+      />
 
-            <h4 style={{ marginTop: 14 }}>Pair Metrics</h4>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Pair</th>
-                  <th>Corr</th>
-                  <th>Beta</th>
-                  <th>Spread</th>
-                  <th>Z</th>
-                  <th>Rel Strength</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(relation.pair_metrics || []).map((row: any) => (
-                  <tr key={row.pair}>
-                    <td>{row.pair}</td>
-                    <td>{fmt2(row.correlation)}</td>
-                    <td>{fmt2(row.beta)}</td>
-                    <td>{fmt2(row.spread)}</td>
-                    <td>{fmt2(row.z_score)}</td>
-                    <td>{fmt2(row.relative_strength)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-      </SectionCard>
-    </main>
+      {loading ? <LoadingState title="Loading relations" /> : null}
+      {error ? <ErrorState message={error} /> : null}
+
+      {!vm.relation ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>No relation data</CardTitle>
+            <CardDescription>Run relation job or wait for scheduled execution.</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Relation Window</CardTitle>
+              <CardDescription>
+                {fmtDateTime(vm.relation.window_start_bkk)} - {fmtDateTime(vm.relation.window_end_bkk)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              <Badge variant="success">Open: {(vm.relation.quality_flags?.open_symbols || []).join(", ") || "-"}</Badge>
+              <Badge variant="warning">Closed: {(vm.relation.quality_flags?.closed_symbols || []).join(", ") || "-"}</Badge>
+              <Badge variant="outline">Degraded: {(vm.relation.quality_flags?.degraded_symbols || []).join(", ") || "-"}</Badge>
+              <Badge variant="outline">Aligned: {(vm.relation.quality_flags?.pair_aligned_points || []).join(", ") || "-"}</Badge>
+            </CardContent>
+          </Card>
+
+          <section className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Per Symbol (30m)</CardTitle>
+                <CardDescription>Current, previous, abs change, pct change, points, degraded</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="table-shell">
+                  <Table>
+                    <THead>
+                      <TR>
+                        <TH>Symbol</TH>
+                        <TH>Current</TH>
+                        <TH>Previous</TH>
+                        <TH>Abs</TH>
+                        <TH>%</TH>
+                        <TH>Points</TH>
+                        <TH>Degraded</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {(vm.relation.symbol_returns || []).map((row: any) => (
+                        <TR key={row.symbol}>
+                          <TD className="font-medium">{row.symbol}</TD>
+                          <TD>{fmtNum(row.current_price, 2)}</TD>
+                          <TD>{fmtNum(row.previous_price, 2)}</TD>
+                          <TD>{fmtNum(row.abs_change, 2)}</TD>
+                          <TD>{fmtNum(row.pct_change, 2)}</TD>
+                          <TD>{row.points_observed ?? "-"}</TD>
+                          <TD>{row.degraded ? "yes" : "no"}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Pair Metrics (30m)</CardTitle>
+                <CardDescription>Corr, beta, spread, z-score, relative strength</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="table-shell">
+                  <Table>
+                    <THead>
+                      <TR>
+                        <TH>Pair</TH>
+                        <TH>Corr</TH>
+                        <TH>Beta</TH>
+                        <TH>Spread</TH>
+                        <TH>Z</TH>
+                        <TH>Rel Strength</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {(vm.relation.pair_metrics || []).map((row: any) => (
+                        <TR key={row.pair}>
+                          <TD className="font-medium">{row.pair}</TD>
+                          <TD>{fmtNum(row.correlation, 2)}</TD>
+                          <TD>{fmtNum(row.beta, 2)}</TD>
+                          <TD>{fmtNum(row.spread, 2)}</TD>
+                          <TD>{fmtNum(row.z_score, 2)}</TD>
+                          <TD>{fmtNum(row.relative_strength, 2)}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        </>
+      )}
+    </AppShell>
   );
 }

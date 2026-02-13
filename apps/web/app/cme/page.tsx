@@ -1,168 +1,196 @@
 "use client";
 
-import { TopNav } from "../../components/nav";
-import { SectionCard } from "../../components/section";
+import { AppShell } from "../../components/layout/app-shell";
+import { PageHeader } from "../../components/layout/page-header";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Table, TBody, TD, TH, THead, TR } from "../../components/ui/table";
+import { ErrorState, LoadingState } from "../../components/dashboard/states";
 import { useOverviewData } from "../../lib/use-overview-data";
+import { fmtDateTime, fmtNum } from "../../lib/format";
+import { toCmeViewModel } from "../../lib/view-models";
 
 export const dynamic = "force-dynamic";
 
 export default function CmePage() {
   const { data, loading, error } = useOverviewData(15000);
-  const cme = data?.cme_snapshots || [];
-  const topActives = data?.top_actives || [];
-  const deltas = data?.cme_deltas || [];
-  const topStrikeChanges = data?.cme_top_strike_changes || [];
-  const snapshotById = new Map<string, any>(cme.map((row: any) => [row.id, row]));
+  const vm = toCmeViewModel(data);
+
   const topBySnapshot = new Map<string, any[]>();
-  for (const row of topActives) {
+  for (const row of vm.topActives || []) {
     const arr = topBySnapshot.get(row.snapshot_id) || [];
     arr.push(row);
     topBySnapshot.set(row.snapshot_id, arr);
   }
-  const sortedSnapshots = [...cme].sort(
+
+  const sortedSnapshots = [...(vm.snapshots || [])].sort(
     (a: any, b: any) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime()
   );
-  const sortedDeltas = [...deltas].sort(
+  const sortedDeltas = [...(vm.deltas || [])].sort(
     (a: any, b: any) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime()
   );
+
   const latestDeltaByView = new Map<string, any>();
   for (const row of sortedDeltas) {
-    if (!latestDeltaByView.has(row.view_type)) {
-      latestDeltaByView.set(row.view_type, row);
-    }
+    if (!latestDeltaByView.has(row.view_type)) latestDeltaByView.set(row.view_type, row);
   }
-  const latestDeltas = Array.from(latestDeltaByView.values());
+  const latestDeltas = [...latestDeltaByView.values()];
 
   return (
-    <main className="container">
-      <TopNav />
-      {loading ? <p style={{ color: "var(--muted)", marginBottom: 10 }}>Loading data...</p> : null}
-      {error ? <p className="badge-warn" style={{ marginBottom: 10 }}>Data load error: {error}</p> : null}
-      <SectionCard title="CME Detail" subtitle="OI and Intraday with top strikes">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Time (BKK)</th>
-              <th>Type</th>
-              <th>Series</th>
-              <th>Exp Date</th>
-              <th>DTE</th>
-              <th>Put</th>
-              <th>Call</th>
-              <th>Vol</th>
-              <th>Vol Chg</th>
-              <th>Fut Chg</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cme.map((row: any) => (
-              <tr key={row.id}>
-                <td>{new Date(row.snapshot_time_bkk).toLocaleString()}</td>
-                <td>{row.view_type}</td>
-                <td>{row.series_name}</td>
-                <td>{row.series_expiration_date || "-"}</td>
-                <td>{typeof row.series_dte === "number" ? row.series_dte.toFixed(2) : "-"}</td>
-                <td>{row.put_total}</td>
-                <td>{row.call_total}</td>
-                <td>{row.vol}</td>
-                <td>{row.vol_chg}</td>
-                <td>{row.future_chg}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <AppShell>
+      <PageHeader
+        title="CME"
+        subtitle="Intraday + OI snapshots, top active strikes, and latest strike change analytics."
+      />
 
-        <h4 style={{ marginTop: 20 }}>Top 3 Active Strikes by View</h4>
-        {sortedSnapshots.map((snapshot: any) => {
-          const rows = (topBySnapshot.get(snapshot.id) || []).sort((a, b) => a.rank - b.rank);
-          return (
-            <div key={snapshot.id} style={{ marginTop: 14 }}>
-              <p style={{ color: "var(--muted)" }}>
-                {snapshot.view_type.toUpperCase()} | {new Date(snapshot.snapshot_time_bkk).toLocaleString()} | {snapshot.series_name} | {snapshot.series_expiration_date || "-"} | DTE {typeof snapshot.series_dte === "number" ? snapshot.series_dte.toFixed(2) : "-"}
-              </p>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Strike</th>
-                    <th>Put</th>
-                    <th>Call</th>
-                    <th>Total</th>
-                    <th>Vol Settle</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row: any, idx: number) => (
-                    <tr key={`${snapshot.id}-${row.rank}-${idx}`}>
-                      <td>{row.rank}</td>
-                      <td>{row.strike}</td>
-                      <td>{row.put}</td>
-                      <td>{row.call}</td>
-                      <td>{row.total}</td>
-                      <td>{typeof row.vol_settle === "number" ? row.vol_settle.toFixed(2) : "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        })}
+      {loading ? <LoadingState title="Loading CME" /> : null}
+      {error ? <ErrorState message={error} /> : null}
 
-        <h4 style={{ marginTop: 20 }}>Top 3 Strike Changes (Previous vs Current)</h4>
-        {latestDeltas.length === 0 ? (
-          <p style={{ color: "var(--muted)" }}>No delta data yet.</p>
-        ) : (
-          latestDeltas.map((delta: any) => {
-            const rows = topStrikeChanges
-              .filter((row: any) => row.delta_id === delta.id)
-              .sort((a: any, b: any) => a.rank - b.rank);
-            return (
-              <div key={delta.id} style={{ marginTop: 14 }}>
-                <p style={{ color: "var(--muted)" }}>
-                  {delta.view_type.toUpperCase()} | {delta.series_name}
-                </p>
-                <p style={{ marginTop: 4 }}>
-                  Compare time: {new Date(delta.snapshot_time_bkk).toLocaleString()} vs{" "}
-                  {delta.previous_snapshot_time_bkk ? new Date(delta.previous_snapshot_time_bkk).toLocaleString() : "-"}
-                </p>
-                <p style={{ marginTop: 4 }}>
-                  Put Δ {delta.put_change} | Call Δ {delta.call_change} | Vol Δ {delta.vol_change ?? "-"} | Fut Δ {delta.future_change ?? "-"}
-                </p>
-                <table className="table" style={{ marginTop: 6 }}>
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Strike</th>
-                      <th>Put (Prev→Now)</th>
-                      <th>Call (Prev→Now)</th>
-                      <th>Total (Prev→Now)</th>
-                      <th>Total Δ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={6}>No positive strike changes for this compare.</td>
-                      </tr>
-                    ) : (
-                      rows.map((row: any) => (
-                        <tr key={`${delta.id}-${row.rank}`}>
-                          <td>{row.rank}</td>
-                          <td>{row.strike}</td>
-                          <td>{row.put_before} → {row.put_now} ({row.put_change})</td>
-                          <td>{row.call_before} → {row.call_now} ({row.call_change})</td>
-                          <td>{row.total_before} → {row.total_now}</td>
-                          <td>{row.total_change}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })
-        )}
-      </SectionCard>
-    </main>
+      <Card>
+        <CardHeader>
+          <CardTitle>CME Snapshots</CardTitle>
+          <CardDescription>Type / Series / Exp Date / DTE / Put / Call / Vol / Vol Chg / Fut Chg</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="table-shell">
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Time (BKK)</TH>
+                  <TH>Type</TH>
+                  <TH>Series</TH>
+                  <TH>Exp Date</TH>
+                  <TH>DTE</TH>
+                  <TH>Put</TH>
+                  <TH>Call</TH>
+                  <TH>Vol</TH>
+                  <TH>Vol Chg</TH>
+                  <TH>Fut Chg</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {(vm.snapshots || []).map((row: any) => (
+                  <TR key={row.id}>
+                    <TD>{fmtDateTime(row.snapshot_time_bkk)}</TD>
+                    <TD>{row.view_type}</TD>
+                    <TD>{row.series_name}</TD>
+                    <TD>{row.series_expiration_date || "-"}</TD>
+                    <TD>{fmtNum(row.series_dte, 2)}</TD>
+                    <TD>{row.put_total}</TD>
+                    <TD>{row.call_total}</TD>
+                    <TD>{fmtNum(row.vol, 2)}</TD>
+                    <TD>{fmtNum(row.vol_chg, 2)}</TD>
+                    <TD>{fmtNum(row.future_chg, 2)}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top 3 Active Strikes</CardTitle>
+            <CardDescription>Grouped by snapshot and view type</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sortedSnapshots.map((snapshot: any) => {
+              const rows = (topBySnapshot.get(snapshot.id) || []).sort((a, b) => a.rank - b.rank);
+              return (
+                <div key={snapshot.id} className="rounded-lg border border-border bg-card/40 p-3">
+                  <p className="text-sm font-medium">
+                    {snapshot.view_type.toUpperCase()} · {snapshot.series_name} · {snapshot.series_expiration_date || "-"} · DTE {fmtNum(snapshot.series_dte, 2)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{fmtDateTime(snapshot.snapshot_time_bkk)}</p>
+                  <div className="mt-2 table-shell">
+                    <Table>
+                      <THead>
+                        <TR>
+                          <TH>Rank</TH>
+                          <TH>Strike</TH>
+                          <TH>Put</TH>
+                          <TH>Call</TH>
+                          <TH>Total</TH>
+                          <TH>Vol Settle</TH>
+                        </TR>
+                      </THead>
+                      <TBody>
+                        {rows.map((row: any, idx: number) => (
+                          <TR key={`${snapshot.id}-${row.rank}-${idx}`}>
+                            <TD>{row.rank}</TD>
+                            <TD>{row.strike}</TD>
+                            <TD>{row.put}</TD>
+                            <TD>{row.call}</TD>
+                            <TD>{row.total}</TD>
+                            <TD>{fmtNum(row.vol_settle, 2)}</TD>
+                          </TR>
+                        ))}
+                      </TBody>
+                    </Table>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top 3 Strike Changes</CardTitle>
+            <CardDescription>Latest compare only, same series now vs previous</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!latestDeltas.length ? (
+              <p className="text-sm text-muted-foreground">No delta data yet.</p>
+            ) : (
+              latestDeltas.map((delta: any) => {
+                const rows = (vm.topStrikeChanges || [])
+                  .filter((row: any) => row.delta_id === delta.id)
+                  .sort((a: any, b: any) => a.rank - b.rank);
+                return (
+                  <div key={delta.id} className="rounded-lg border border-border bg-card/40 p-3">
+                    <p className="text-sm font-medium">{delta.view_type.toUpperCase()} · {delta.series_name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {fmtDateTime(delta.snapshot_time_bkk)} vs {fmtDateTime(delta.previous_snapshot_time_bkk)}
+                    </p>
+                    <div className="mt-2 table-shell">
+                      <Table>
+                        <THead>
+                          <TR>
+                            <TH>Rank</TH>
+                            <TH>Strike</TH>
+                            <TH>Put (Prev→Now)</TH>
+                            <TH>Call (Prev→Now)</TH>
+                            <TH>Total Δ</TH>
+                          </TR>
+                        </THead>
+                        <TBody>
+                          {!rows.length ? (
+                            <TR>
+                              <TD colSpan={5}>No positive strike changes for latest compare.</TD>
+                            </TR>
+                          ) : (
+                            rows.map((row: any) => (
+                              <TR key={`${delta.id}-${row.rank}`}>
+                                <TD>{row.rank}</TD>
+                                <TD>{row.strike}</TD>
+                                <TD>{row.put_before} → {row.put_now} ({fmtNum(row.put_change, 2)})</TD>
+                                <TD>{row.call_before} → {row.call_now} ({fmtNum(row.call_change, 2)})</TD>
+                                <TD>{fmtNum(row.total_change, 2)}</TD>
+                              </TR>
+                            ))
+                          )}
+                        </TBody>
+                      </Table>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </AppShell>
   );
 }

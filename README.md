@@ -75,9 +75,28 @@ Run in order:
 - Password login has lockout protection:
   - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS` (default 5)
   - `AUTH_LOGIN_LOCK_MINUTES` (default 15)
-- Production webhook auth recommendation:
+- TradingView direct webhook mode (recommended for current setup):
+  - `WEBHOOK_REQUIRE_SIGNATURE=false`
+  - `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=true`
+- Strict HMAC mode (only if sender can provide `x-tv-signature`):
   - `WEBHOOK_REQUIRE_SIGNATURE=true`
   - `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=false`
+
+
+## Frontend UI Stack
+
+- Next.js App Router
+- Tailwind CSS token system
+- shadcn-style reusable primitives (`apps/web/components/ui`)
+- Branded shell with logo/favicon from `logo/logo.png`
+
+Core routes:
+- Public read: `/overview`, `/cme`, `/relations`
+- Admin only: `/settings` (middleware + server-side role check)
+
+Data refresh:
+- Frontend polls `/api/dashboard/overview-public` every 15s for V1
+- Realtime subscriptions are intentionally deferred to later phase
 
 ## TradingView Live Checklist
 

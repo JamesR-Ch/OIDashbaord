@@ -82,8 +82,8 @@ Minimal required:
 - `TRADINGVIEW_WEBHOOK_SECRET`
 - `WORKER_CONTROL_SECRET=<same value as worker>`
 - `WORKER_CONTROL_URL=<worker internal URL>`
-- `WEBHOOK_REQUIRE_SIGNATURE=true` (security baseline)
-- `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=false` (security baseline)
+- `WEBHOOK_REQUIRE_SIGNATURE=false` (for direct TradingView alerts)
+- `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=true` (accept `secret` in JSON body)
 
 Optional tuning (safe to skip; defaults exist in code):
 - `WEBHOOK_MAX_SKEW_SECONDS=600`
@@ -101,6 +101,9 @@ Optional tuning (safe to skip; defaults exist in code):
 Important:
 - `WORKER_CONTROL_SECRET` must match worker exactly.
 - `WORKER_CONTROL_URL` should point to worker service URL + port.
+- Webhook auth modes:
+  - Direct TradingView (current setup): `WEBHOOK_REQUIRE_SIGNATURE=false`, `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=true`
+  - Strict HMAC mode (only if your sender can set `x-tv-signature`): `WEBHOOK_REQUIRE_SIGNATURE=true`, `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=false`
 
 ## 7. Configure `worker` Service (Railway)
 

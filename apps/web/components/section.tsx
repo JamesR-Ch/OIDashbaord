@@ -1,11 +1,14 @@
 import { ReactNode } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 
 export function SectionCard({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <section className="card">
-      <h3>{title}</h3>
-      {subtitle ? <p style={{ color: "var(--muted)", marginTop: 6 }}>{subtitle}</p> : null}
-      <div style={{ marginTop: 12 }}>{children}</div>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        {subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
   );
 }

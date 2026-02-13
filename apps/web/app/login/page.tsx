@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TopNav } from "../../components/nav";
+import { AppShell } from "../../components/layout/app-shell";
+import { PageHeader } from "../../components/layout/page-header";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 import { getBrowserSupabaseClient } from "../../lib/supabase-browser";
 import { clearServerSession, signInWithGithub, signInWithPassword, signOut, syncServerSession } from "../../lib/auth-client";
 
@@ -25,9 +30,7 @@ export default function LoginPage() {
     const supabase = getBrowserSupabaseClient();
 
     async function syncThenRedirect(accessToken: string) {
-      if (!accessToken) return;
-      if (syncingRef.current) return;
-      if (lastSyncedTokenRef.current === accessToken) return;
+      if (!accessToken || syncingRef.current || lastSyncedTokenRef.current === accessToken) return;
 
       syncingRef.current = true;
       const ok = await syncServerSession(accessToken);
@@ -42,7 +45,6 @@ export default function LoginPage() {
       router.replace(nextPath as any);
     }
 
-    // Handle OAuth return and existing sessions.
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.access_token) {
         void syncThenRedirect(data.session.access_token);
@@ -110,42 +112,34 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container">
-      <TopNav />
-      <section className="card" style={{ maxWidth: 560 }}>
-        <h2>Login</h2>
-        <p style={{ color: "var(--muted)", marginTop: 8 }}>
-          Sign in with Supabase. Session token is handled automatically and used for protected settings APIs.
-        </p>
-        <div style={{ marginTop: 12 }}>
-          <button type="button" onClick={onGithubSignIn}>Sign In with GitHub</button>
-        </div>
-        <p style={{ color: "var(--muted)", marginTop: 8 }}>or use email/password</p>
-        <form onSubmit={onSignIn} style={{ marginTop: 12 }}>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-          />
-          <label htmlFor="password" style={{ marginTop: 8, display: "block" }}>Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button type="submit">Sign In</button>
-            <button type="button" onClick={onSignOut}>Sign Out</button>
-          </div>
-          <p style={{ marginTop: 10, color: "var(--muted)" }}>{message}</p>
-        </form>
-      </section>
-    </main>
+    <AppShell>
+      <PageHeader title="Login" subtitle="Authenticate with Supabase to access admin settings." />
+      <Card className="mx-auto w-full max-w-xl">
+        <CardHeader>
+          <CardTitle>Sign In</CardTitle>
+          <CardDescription>Use GitHub OAuth or email/password.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button type="button" className="w-full" onClick={onGithubSignIn}>Sign In with GitHub</Button>
+
+          <form onSubmit={onSignIn} className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit">Sign In</Button>
+              <Button type="button" variant="ghost" onClick={onSignOut}>Sign Out</Button>
+            </div>
+          </form>
+
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </CardContent>
+      </Card>
+    </AppShell>
   );
 }

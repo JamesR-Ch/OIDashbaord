@@ -1,9 +1,18 @@
 "use client";
 
-import { TopNav } from "../../components/nav";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AppShell } from "../../components/layout/app-shell";
+import { PageHeader } from "../../components/layout/page-header";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Separator } from "../../components/ui/separator";
+import { Table, TBody, TD, TH, THead, TR } from "../../components/ui/table";
 import { getAccessToken } from "../../lib/auth-client";
+import { fmtDateTime } from "../../lib/format";
 
 interface LinkState {
   trade_date_bkk: string;
@@ -171,7 +180,6 @@ export default function SettingsPage() {
     });
 
     const json = await res.json();
-
     if (!res.ok) {
       setMessage(`error: ${json.error || "failed"}`);
       return;
@@ -215,258 +223,238 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="container">
-      <TopNav />
+    <AppShell>
+      <PageHeader
+        title="Settings"
+        subtitle="Admin-only control plane: CME daily link, run-now triggers, health, and webhook telemetry."
+      />
 
-      <section className="card" style={{ maxWidth: 760 }}>
-        <h2>CME Daily Link Update</h2>
-        <p style={{ color: "var(--muted)", marginTop: 6 }}>
-          OI/Intraday worker is hard-blocked until this link is updated for the current BKK trade date after 05:30.
-        </p>
-
-        <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
-          <div className="grid cols-2">
-            <div>
-              <label htmlFor="trade_date">Trade Date (BKK)</label>
-              <input id="trade_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+      <Card>
+        <CardHeader>
+          <CardTitle>CME Daily Link Update</CardTitle>
+          <CardDescription>
+            OI/Intraday worker is blocked until this link is updated for current BKK trade date after 05:30.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="trade_date">Trade Date (BKK)</Label>
+                <Input id="trade_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="url">QuikStrike URL</Label>
+                <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} required placeholder="https://cmegroup-tools.quikstrike.net/..." />
+              </div>
             </div>
+            <Button type="submit">Save Daily Link</Button>
+            <p className="text-sm text-muted-foreground">{message}</p>
+          </form>
+
+          {latest ? (
+            <div className="grid gap-2 rounded-lg border border-border bg-card/40 p-3 text-sm md:grid-cols-2">
+              <p><span className="text-muted-foreground">Latest Date:</span> {latest.trade_date_bkk}</p>
+              <p><span className="text-muted-foreground">Status:</span> {latest.status}</p>
+              <p><span className="text-muted-foreground">Updated At:</span> {fmtDateTime(latest.updated_at)}</p>
+              <p><span className="text-muted-foreground">Updated By:</span> {latest.updated_by}</p>
+            </div>
+          ) : null}
+
+          <Separator />
+
+          <div>
+            <h3 className="text-sm font-semibold">Run Jobs Now</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Admin-only immediate run without waiting for xx:00/xx:30.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("relation")}>
+                Run Relation Now
+              </Button>
+              <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("cme")}>
+                Run CME Now
+              </Button>
+              <Button disabled={runningJob !== ""} onClick={() => runNow("both")}>
+                Run Both Now
+              </Button>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">{runNowMessage}</p>
           </div>
+        </CardContent>
+      </Card>
 
-          <div style={{ marginTop: 10 }}>
-            <label htmlFor="url">QuikStrike URL</label>
-            <input id="url" value={url} onChange={(e) => setUrl(e.target.value)} required placeholder="https://cmegroup-tools.quikstrike.net/..." />
-          </div>
-
-          <button style={{ marginTop: 12 }} type="submit">Save Daily Link</button>
-          <p style={{ marginTop: 8, color: "var(--muted)" }}>{message}</p>
-        </form>
-
-        {latest ? (
-          <dl className="kv">
-            <dt>Latest Date</dt>
-            <dd>{latest.trade_date_bkk}</dd>
-            <dt>Status</dt>
-            <dd>{latest.status}</dd>
-            <dt>Updated At</dt>
-            <dd>{new Date(latest.updated_at).toLocaleString()}</dd>
-            <dt>Updated By</dt>
-            <dd>{latest.updated_by}</dd>
-          </dl>
-        ) : null}
-
-        <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <h3>Run Jobs Now</h3>
-          <p style={{ color: "var(--muted)", marginTop: 6 }}>
-            Admin-only immediate run. This triggers worker jobs without waiting for xx:00/xx:30.
-          </p>
-          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-            <button type="button" disabled={runningJob !== ""} onClick={() => runNow("relation")}>
-              Run Relation Now
-            </button>
-            <button type="button" disabled={runningJob !== ""} onClick={() => runNow("cme")}>
-              Run CME Now
-            </button>
-            <button type="button" disabled={runningJob !== ""} onClick={() => runNow("both")}>
-              Run Both Now
-            </button>
-          </div>
-          <p style={{ marginTop: 8, color: "var(--muted)" }}>{runNowMessage}</p>
-        </div>
-
-        <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <h3>Latest Run Status</h3>
-          <p style={{ color: "var(--muted)", marginTop: 6 }}>
-            Most recent worker executions from `job_runs`.
-          </p>
-          {!recentJobs.length ? (
-            <p style={{ marginTop: 8, color: "var(--muted)" }}>No job data yet.</p>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Job</th>
-                  <th>Status</th>
-                  <th>Details</th>
-                  <th>Started</th>
-                  <th>Finished</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentJobs.map((job, idx) => (
-                  <tr key={`${job.job_name}-${job.started_at}-${idx}`}>
-                    <td>{job.job_name}</td>
-                    <td className={job.status === "success" ? "badge-ok" : job.status === "failed" ? "badge-warn" : ""}>
-                      {job.status}
-                    </td>
-                    <td>{renderJobDetails(job)}</td>
-                    <td>{new Date(job.started_at).toLocaleString()}</td>
-                    <td>{job.finished_at ? new Date(job.finished_at).toLocaleString() : "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <h3>System Alerts</h3>
-          {!alerts ? (
-            <p style={{ marginTop: 8, color: "var(--muted)" }}>No alert state available.</p>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Check</th>
-                  <th>State</th>
-                  <th>Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Relation freshness</td>
-                  <td className={alerts.relation_stale ? "badge-warn" : "badge-ok"}>
-                    {alerts.relation_stale ? "stale" : "ok"}
-                  </td>
-                  <td>
-                    age={alerts.relation_age_min ?? "-"} min, status={alerts.relation_last_status || "-"}
-                    {alerts.relation_skip_reason ? `, reason=${alerts.relation_skip_reason}` : ""}
-                  </td>
-                </tr>
-                <tr>
-                  <td>CME freshness</td>
-                  <td className={alerts.cme_stale ? "badge-warn" : "badge-ok"}>
-                    {alerts.cme_stale ? "stale" : "ok"}
-                  </td>
-                  <td>
-                    age={alerts.cme_age_min ?? "-"} min, status={alerts.cme_last_status || "-"}
-                    {alerts.cme_skip_reason ? `, reason=${alerts.cme_skip_reason}` : ""}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <h3>Worker Health</h3>
-          {!workerHealth ? (
-            <p style={{ marginTop: 8, color: "var(--muted)" }}>Worker health telemetry unavailable.</p>
-          ) : workerHealth.ok ? (
-            <>
-              <p style={{ color: "var(--muted)", marginTop: 6 }}>
-                Worker UTC time: {workerHealth.now_utc ? new Date(workerHealth.now_utc).toLocaleString() : "-"}
-              </p>
-              <p style={{ marginTop: 6 }}>
-                Running jobs: {workerHealth.running_jobs?.length ? workerHealth.running_jobs.join(", ") : "-"}
-              </p>
-              <h4 style={{ marginTop: 12 }}>Symbol Session Status</h4>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th>Mode</th>
-                    <th>Open</th>
-                    <th>Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(workerHealth.symbol_sessions || []).map((row, idx) => (
-                    <tr key={`${row.symbol}-${idx}`}>
-                      <td>{row.symbol}</td>
-                      <td>{workerHealth.symbol_session_modes?.[row.symbol] || "auto"}</td>
-                      <td className={row.open ? "badge-ok" : "badge-warn"}>{row.open ? "yes" : "no"}</td>
-                      <td>{row.reason}</td>
-                    </tr>
+      <section className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Latest Run Status</CardTitle>
+            <CardDescription>Most recent worker executions from job_runs.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="table-shell">
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Job</TH>
+                    <TH>Status</TH>
+                    <TH>Details</TH>
+                    <TH>Started</TH>
+                    <TH>Finished</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {recentJobs.map((job, idx) => (
+                    <TR key={`${job.job_name}-${job.started_at}-${idx}`}>
+                      <TD>{job.job_name}</TD>
+                      <TD>
+                        <Badge variant={job.status === "success" ? "success" : job.status === "failed" ? "warning" : "outline"}>
+                          {job.status}
+                        </Badge>
+                      </TD>
+                      <TD>{renderJobDetails(job)}</TD>
+                      <TD>{fmtDateTime(job.started_at)}</TD>
+                      <TD>{job.finished_at ? fmtDateTime(job.finished_at) : "-"}</TD>
+                    </TR>
                   ))}
-                </tbody>
-              </table>
-            </>
-          ) : (
-            <p className="badge-warn" style={{ marginTop: 8 }}>
-              {workerHealth.error || "worker health check failed"}
-            </p>
-          )}
-        </div>
+                </TBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
-          <h3>Webhook Telemetry</h3>
-          <p style={{ color: "var(--muted)", marginTop: 6 }}>
-            TradingView webhook traffic and response distribution in last 1 hour.
-          </p>
-          {!webhookTelemetry ? (
-            <p style={{ marginTop: 8, color: "var(--muted)" }}>
-              Telemetry unavailable (run migration 005 and ensure webhook traffic exists).
-            </p>
-          ) : (
-            <>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Total</th>
-                    <th>2xx</th>
-                    <th>4xx</th>
-                    <th>5xx</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{webhookTelemetry.total}</td>
-                    <td className="badge-ok">{webhookTelemetry.success_2xx}</td>
-                    <td>{webhookTelemetry.client_4xx}</td>
-                    <td className={webhookTelemetry.server_5xx > 0 ? "badge-warn" : ""}>{webhookTelemetry.server_5xx}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <h4 style={{ marginTop: 12 }}>Top Webhook Notes (1h)</h4>
-              {!webhookTelemetry.top_notes.length ? (
-                <p style={{ marginTop: 8, color: "var(--muted)" }}>No note data in last hour.</p>
-              ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Note</th>
-                      <th>Count</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {webhookTelemetry.top_notes.map((row, idx) => (
-                      <tr key={`${row.note}-${idx}`}>
-                        <td>{row.note}</td>
-                        <td>{row.count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              <h4 style={{ marginTop: 12 }}>Recent Webhook Requests</h4>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Status</th>
-                    <th>IP</th>
-                    <th>Note</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {webhookTelemetry.recent.map((row, idx) => (
-                    <tr key={`${row.received_at}-${row.ip}-${idx}`}>
-                      <td>{new Date(row.received_at).toLocaleString()}</td>
-                      <td className={row.status_code >= 500 ? "badge-warn" : row.status_code < 300 ? "badge-ok" : ""}>
-                        {row.status_code}
-                      </td>
-                      <td>{row.ip}</td>
-                      <td>{row.note || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>System Alerts</CardTitle>
+            <CardDescription>Staleness and latest run outcomes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!alerts ? (
+              <p className="text-sm text-muted-foreground">No alert state available.</p>
+            ) : (
+              <div className="space-y-3 text-sm">
+                <div className="rounded-lg border border-border bg-card/40 p-3">
+                  <p className="font-medium">Relation freshness</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {alerts.relation_stale ? "stale" : "ok"} · age={alerts.relation_age_min ?? "-"} min · status={alerts.relation_last_status || "-"}
+                    {alerts.relation_skip_reason ? ` · reason=${alerts.relation_skip_reason}` : ""}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-card/40 p-3">
+                  <p className="font-medium">CME freshness</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {alerts.cme_stale ? "stale" : "ok"} · age={alerts.cme_age_min ?? "-"} min · status={alerts.cme_last_status || "-"}
+                    {alerts.cme_skip_reason ? ` · reason=${alerts.cme_skip_reason}` : ""}
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
-    </main>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Worker Health</CardTitle>
+            <CardDescription>Runtime health and symbol session status</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {!workerHealth ? (
+              <p className="text-muted-foreground">Worker health telemetry unavailable.</p>
+            ) : workerHealth.ok ? (
+              <>
+                <p><span className="text-muted-foreground">Worker UTC:</span> {workerHealth.now_utc ? fmtDateTime(workerHealth.now_utc) : "-"}</p>
+                <p><span className="text-muted-foreground">Running jobs:</span> {workerHealth.running_jobs?.length ? workerHealth.running_jobs.join(", ") : "-"}</p>
+                <div className="table-shell">
+                  <Table>
+                    <THead>
+                      <TR>
+                        <TH>Symbol</TH>
+                        <TH>Mode</TH>
+                        <TH>Open</TH>
+                        <TH>Reason</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {(workerHealth.symbol_sessions || []).map((row, idx) => (
+                        <TR key={`${row.symbol}-${idx}`}>
+                          <TD>{row.symbol}</TD>
+                          <TD>{workerHealth.symbol_session_modes?.[row.symbol] || "auto"}</TD>
+                          <TD>{row.open ? "yes" : "no"}</TD>
+                          <TD>{row.reason}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-danger-foreground">{workerHealth.error || "worker health check failed"}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Webhook Telemetry</CardTitle>
+            <CardDescription>TradingView webhook traffic and status distribution (1h)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!webhookTelemetry ? (
+              <p className="text-sm text-muted-foreground">Telemetry unavailable (migration 005 required).</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">Total:</span> {webhookTelemetry.total}</div>
+                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">2xx:</span> {webhookTelemetry.success_2xx}</div>
+                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">4xx:</span> {webhookTelemetry.client_4xx}</div>
+                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">5xx:</span> {webhookTelemetry.server_5xx}</div>
+                </div>
+
+                <div className="table-shell">
+                  <Table>
+                    <THead>
+                      <TR>
+                        <TH>Top Note</TH>
+                        <TH>Count</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {(webhookTelemetry.top_notes || []).map((row, idx) => (
+                        <TR key={`${row.note}-${idx}`}>
+                          <TD>{row.note}</TD>
+                          <TD>{row.count}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+
+                <div className="table-shell">
+                  <Table>
+                    <THead>
+                      <TR>
+                        <TH>Time</TH>
+                        <TH>Status</TH>
+                        <TH>IP</TH>
+                        <TH>Note</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {(webhookTelemetry.recent || []).map((row, idx) => (
+                        <TR key={`${row.received_at}-${row.ip}-${idx}`}>
+                          <TD>{fmtDateTime(row.received_at)}</TD>
+                          <TD>{row.status_code}</TD>
+                          <TD>{row.ip}</TD>
+                          <TD>{row.note || "-"}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </AppShell>
   );
 }
