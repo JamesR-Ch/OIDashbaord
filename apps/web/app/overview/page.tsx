@@ -4,9 +4,16 @@ import { SectionCard } from "../../components/section";
 export const dynamic = "force-dynamic";
 
 async function getOverview() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/dashboard/overview-public`, { cache: "no-store" });
-  if (!res.ok) return null;
-  return res.json();
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "http://localhost:3000");
+  try {
+    const res = await fetch(`${baseUrl}/api/dashboard/overview-public`, { cache: "no-store" });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export default async function OverviewPage() {
