@@ -9,12 +9,12 @@
   --foreground: 220 20% 92%;
 
   --bg-base: 225 36% 7%;
-  --bg-panel: 225 31% 10%;
-  --bg-elevated: 225 27% 13%;
+  --bg-panel: 225 31% 11%;
+  --bg-elevated: 225 27% 14%;
 
   --card: 225 28% 10%;
   --card-foreground: 220 19% 92%;
-  --border: 222 20% 20%;
+  --border: 221 19% 24%;
   --input: 222 21% 26%;
   --ring: 170 70% 48%;
 
@@ -24,7 +24,7 @@
   --accent-foreground: 40 100% 11%;
 
   --muted: 223 17% 16%;
-  --muted-foreground: 219 14% 66%;
+  --muted-foreground: 219 14% 74%;
 
   --success: 152 70% 44%;
   --success-foreground: 149 100% 8%;
@@ -48,15 +48,12 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(circle at 12% 8%, hsl(var(--primary) / 0.14), transparent 28%),
-    radial-gradient(circle at 88% 18%, hsl(var(--accent) / 0.1), transparent 26%),
-    linear-gradient(160deg, hsl(var(--bg-base)), hsl(var(--background)) 60%, hsl(var(--bg-panel)));
+  background: hsl(var(--bg-base));
 }
 
 @layer components {
   .table-shell {
-    @apply overflow-x-auto rounded-lg border border-border bg-panel/50;
+    @apply overflow-x-auto rounded-lg border border-border bg-elevated/45;
   }
 
   .table-shell table {
@@ -72,7 +69,7 @@ body {
   }
 
   .section-title {
-    @apply text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-foreground/85;
   }
 
   .terminal-grid {

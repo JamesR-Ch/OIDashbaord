@@ -38,8 +38,8 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
   return (
     <main className="min-h-screen bg-transparent text-foreground">
       <div className="mx-auto grid min-h-screen w-full max-w-[1600px] grid-cols-1 md:grid-cols-[250px_1fr]">
-        <aside className="border-b border-border bg-panel/80 p-4 backdrop-blur-xl md:border-b-0 md:border-r md:p-5">
-          <Link href="/overview" className="mb-6 flex items-center gap-3 rounded-lg border border-border bg-elevated/70 p-3">
+        <aside className="border-b border-border bg-panel p-4 md:border-b-0 md:border-r md:p-5">
+          <Link href="/overview" className="mb-6 flex items-center gap-3 rounded-lg border border-border bg-elevated p-3">
             <Image src="/logo.png" alt="OIDashboard logo" width={34} height={34} className="rounded-md object-cover" />
             <div>
               <p className="text-sm font-semibold">OIDashboard</p>
@@ -70,14 +70,14 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
             })}
           </nav>
 
-          <div className="mt-6 rounded-lg border border-border bg-elevated/60 p-3 text-xs">
+          <div className="mt-6 rounded-lg border border-border bg-elevated p-3 text-xs">
             <p className="mb-1 flex items-center gap-2 font-medium text-foreground"><Cpu className="h-3.5 w-3.5 text-primary" /> Quick System</p>
             <p className="text-muted-foreground">Connected to live webhook + worker pipeline.</p>
           </div>
         </aside>
 
         <div className="p-4 md:p-5">
-          <header className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-panel/80 px-4 py-2.5 backdrop-blur-xl">
+          <header className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-panel px-4 py-2.5">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-success" />
               <span className="text-xs text-muted-foreground">Connected</span>

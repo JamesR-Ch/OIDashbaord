@@ -3,10 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 
 export function AnalyticsPanel({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <Card className="bg-panel/85">
+    <Card className="bg-panel">
       <CardHeader>
-        <CardTitle className="text-sm font-semibold tracking-wide">{title}</CardTitle>
-        {subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
+        <CardTitle className="text-base font-semibold tracking-tight text-foreground">{title}</CardTitle>
+        {subtitle ? <CardDescription className="text-sm text-foreground/75">{subtitle}</CardDescription> : null}
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
