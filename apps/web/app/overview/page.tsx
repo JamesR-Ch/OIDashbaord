@@ -2,9 +2,12 @@
 
 import { AppShell } from "../../components/layout/app-shell";
 import { PageHeader } from "../../components/layout/page-header";
-import { Badge } from "../../components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Table, TBody, TD, TH, THead, TR } from "../../components/ui/table";
+import { AnalyticsPanel } from "../../components/dashboard/analytics-panel";
+import { CompactTable, TBody, TD, TH, THead, TR } from "../../components/dashboard/compact-table";
+import { HeatCell } from "../../components/dashboard/heat-cell";
+import { MetricCard } from "../../components/dashboard/metric-card";
+import { RatioBar } from "../../components/dashboard/ratio-bar";
+import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtNum } from "../../lib/format";
@@ -12,9 +15,9 @@ import { toOverviewViewModel } from "../../lib/view-models";
 
 export const dynamic = "force-dynamic";
 
-function toneByAge(minutes: number | null, threshold = 35) {
-  if (minutes == null) return "outline" as const;
-  return minutes > threshold ? "warning" : "success";
+function toneOf(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "neutral" as const;
+  return value > 0 ? "up" : "down";
 }
 
 export default function OverviewPage() {
@@ -24,212 +27,183 @@ export default function OverviewPage() {
   const relationAge = ageMinutes(vm.relation?.anchor_time_bkk);
   const cmeAge = ageMinutes(vm.cmeSnapshots?.[0]?.snapshot_time_bkk);
 
-  const jobsByName = new Map<string, any>();
-  for (const job of vm.jobs || []) {
-    if (!jobsByName.has(job.job_name)) jobsByName.set(job.job_name, job);
-  }
+  const intraday = (vm.cmeSnapshots || []).find((s: any) => s.view_type === "intraday");
+  const oi = (vm.cmeSnapshots || []).find((s: any) => s.view_type === "oi");
 
-  const sortedDeltas = [...(vm.cmeDeltas || [])].sort(
-    (a: any, b: any) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime()
-  );
+  const pairMap = new Map<string, any>();
+  for (const pair of vm.relation?.pair_metrics || []) pairMap.set(pair.pair, pair);
+  const corr = (a: string, b: string) => {
+    if (a === b) return 1;
+    const key = `${a}_${b}`;
+    const rev = `${b}_${a}`;
+    return pairMap.get(key)?.correlation ?? pairMap.get(rev)?.correlation ?? null;
+  };
+  const symbols = ["XAUUSD", "THBUSD", "BTCUSD"];
+
   const latestDeltaByView = new Map<string, any>();
-  for (const row of sortedDeltas) {
-    if (!latestDeltaByView.has(row.view_type)) latestDeltaByView.set(row.view_type, row);
+  const sortedDeltas = [...(vm.cmeDeltas || [])].sort((a: any, b: any) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime());
+  for (const d of sortedDeltas) if (!latestDeltaByView.has(d.view_type)) latestDeltaByView.set(d.view_type, d);
+
+  const topActivesBySnapshot = new Map<string, any[]>();
+  for (const row of vm.topActives || []) {
+    const arr = topActivesBySnapshot.get(row.snapshot_id) || [];
+    arr.push(row);
+    topActivesBySnapshot.set(row.snapshot_id, arr);
   }
-  const latestDeltas = [...latestDeltaByView.values()];
 
   return (
-    <AppShell>
-      <PageHeader
-        title="Overview"
-        subtitle="Decision cockpit for live prices, 30-minute relation engine, and CME OI/Intraday deltas."
-      />
+    <AppShell status={{ relationAgeMin: relationAge, cmeAgeMin: cmeAge }}>
+      <PageHeader title="Decision Dashboard" subtitle="Live cross-asset signal board with CME put/call structure and relation analytics." />
 
-      {loading ? <LoadingState title="Loading overview" /> : null}
+      {loading ? <LoadingState title="Loading dashboard" /> : null}
       {error ? <ErrorState message={error} /> : null}
 
-      <section className="grid gap-4 md:grid-cols-3">
-        {vm.prices.map((p: any) => {
-          const rel = (vm.relation?.symbol_returns || []).find((row: any) => row.symbol === p.symbol);
-          const minuteAbs = typeof p.minute_abs_change === "number" ? p.minute_abs_change : rel?.minute_abs_change;
-          const minutePct = typeof p.minute_pct_change === "number" ? p.minute_pct_change : rel?.minute_pct_change;
+      <section className="terminal-grid md:grid-cols-3">
+        {(vm.prices || []).map((p: any) => {
+          const tone = toneOf(p.minute_pct_change);
           return (
-            <Card key={p.symbol} className="relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/20 blur-2xl" />
-              <CardHeader>
-                <CardTitle className="text-sm">{p.symbol}</CardTitle>
-                <CardDescription>Latest 1m webhook price</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between gap-2">
-                  <p className="text-2xl font-semibold tracking-tight">{fmtNum(p.price, 2)}</p>
-                  <Badge variant={toneByAge(ageMinutes(p.event_time_bkk), 3)}>{fmtDateTime(p.event_time_bkk)}</Badge>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  1m: {fmtNum(minuteAbs, 2)} ({fmtNum(minutePct, 2)}%)
-                </p>
-              </CardContent>
-            </Card>
+            <MetricCard
+              key={p.symbol}
+              title={p.symbol.replace("USD", " / USD")}
+              value={fmtNum(p.price, p.symbol === "THBUSD" ? 3 : 2)}
+              subtitle={`${fmtDateTime(p.event_time_bkk)} · ${ageMinutes(p.event_time_bkk) ?? "-"}m ago`}
+              signal={{
+                label: `${fmtNum(p.minute_abs_change, 2)} (${fmtNum(p.minute_pct_change, 2)}%)`,
+                tone
+              }}
+            />
           );
         })}
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>System Freshness</CardTitle>
-            <CardDescription>Job health and stale data checks</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Relation age</span>
-              <Badge variant={toneByAge(relationAge)}>{relationAge == null ? "-" : `${relationAge} min`}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">CME age</span>
-              <Badge variant={toneByAge(cmeAge)}>{cmeAge == null ? "-" : `${cmeAge} min`}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Relation job</span>
-              <span>{jobsByName.get("relation_30m")?.status || "-"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">CME job</span>
-              <span>{jobsByName.get("cme_30m")?.status || "-"}</span>
-            </div>
-            <div className="rounded-md border border-border bg-card/40 p-3 text-xs text-muted-foreground">
-              Degraded symbols: {vm.relation?.quality_flags?.degraded_symbols?.join(", ") || "-"}
-            </div>
-          </CardContent>
-        </Card>
+      <section className="terminal-grid lg:grid-cols-[1.7fr_1fr]">
+        <AnalyticsPanel title="CME Gold Options" subtitle="Put/Call dynamics and structure signal by view">
+          <div className="space-y-5">
+            {[intraday, oi].filter(Boolean).map((snap: any) => {
+              const tone = toneOf((snap.call_total ?? 0) - (snap.put_total ?? 0));
+              return (
+                <div key={snap.id} className="space-y-2 rounded-lg border border-border bg-elevated/50 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <p className="font-medium text-foreground">{snap.view_type.toUpperCase()} · {snap.series_name} · DTE {fmtNum(snap.series_dte, 2)}</p>
+                    <SignalChip label={tone === "up" ? "Bullish skew" : tone === "down" ? "Bearish skew" : "Balanced"} tone={tone} />
+                  </div>
+                  <RatioBar
+                    leftValue={snap.put_total ?? 0}
+                    rightValue={snap.call_total ?? 0}
+                    leftLabel="Put"
+                    rightLabel="Call"
+                    tone={tone}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </AnalyticsPanel>
 
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Relation Matrix (30m)</CardTitle>
-            <CardDescription>Pair correlation, beta, spread, z-score, relative strength</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="table-shell">
-              <Table>
-                <THead>
-                  <TR>
-                    <TH>Pair</TH>
-                    <TH>Corr</TH>
-                    <TH>Beta</TH>
-                    <TH>Spread</TH>
-                    <TH>Z</TH>
-                    <TH>Rel Strength</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {(vm.relation?.pair_metrics || []).map((row: any) => (
-                    <TR key={row.pair}>
-                      <TD className="font-medium">{row.pair}</TD>
-                      <TD>{fmtNum(row.correlation, 2)}</TD>
-                      <TD>{fmtNum(row.beta, 2)}</TD>
-                      <TD>{fmtNum(row.spread, 2)}</TD>
-                      <TD>{fmtNum(row.z_score, 2)}</TD>
-                      <TD>{fmtNum(row.relative_strength, 2)}</TD>
-                    </TR>
+        <AnalyticsPanel title="Relation Matrix (30m)" subtitle="Correlation heatmap and pair quick signals">
+          <div className="space-y-3">
+            <div className="grid grid-cols-4 gap-2">
+              <div />
+              {symbols.map((s) => <div key={s} className="text-center text-[11px] text-muted-foreground">{s.replace("USD", "")}</div>)}
+              {symbols.map((row) => (
+                <>
+                  <div key={`${row}-lbl`} className="text-[11px] text-muted-foreground">{row.replace("USD", "")}</div>
+                  {symbols.map((col) => (
+                    <HeatCell key={`${row}-${col}`} value={corr(row, col)} isDiagonal={row === col} />
                   ))}
-                </TBody>
-              </Table>
+                </>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>CME OI/Intraday Latest</CardTitle>
-            <CardDescription>Latest intraday + oi snapshots</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="table-shell">
-              <Table>
-                <THead>
-                  <TR>
-                    <TH>Type</TH>
-                    <TH>Series</TH>
-                    <TH>Put</TH>
-                    <TH>Call</TH>
-                    <TH>XAU</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {(vm.cmeSnapshots || []).map((row: any) => (
-                    <TR key={row.id}>
-                      <TD>{row.view_type}</TD>
-                      <TD>
-                        {row.series_name} ({row.series_expiration_date || "-"}, DTE {fmtNum(row.series_dte, 2)})
-                      </TD>
-                      <TD>{row.put_total ?? "-"}</TD>
-                      <TD>{row.call_total ?? "-"}</TD>
-                      <TD>{fmtNum(row.xauusd_price_at_snapshot, 2)}</TD>
-                    </TR>
-                  ))}
-                </TBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>CME Top 3 Changes</CardTitle>
-            <CardDescription>Latest compare only (now vs previous, same series)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!latestDeltas.length ? (
-              <p className="text-sm text-muted-foreground">No CME delta snapshots yet.</p>
-            ) : (
-              latestDeltas.map((delta: any) => {
-                const rows = (vm.cmeTopStrikeChanges || [])
-                  .filter((row: any) => row.delta_id === delta.id)
-                  .sort((a: any, b: any) => a.rank - b.rank);
+            <div className="space-y-1.5 text-xs">
+              {(vm.relation?.pair_metrics || []).map((p: any) => {
+                const tone = toneOf(p.relative_strength);
+                const text = tone === "up" ? "Outperforming" : tone === "down" ? "Underperforming" : "Neutral";
                 return (
-                  <div key={delta.id} className="rounded-lg border border-border bg-card/40 p-3">
-                    <p className="text-sm font-medium">{delta.view_type.toUpperCase()} · {delta.series_name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {fmtDateTime(delta.snapshot_time_bkk)} vs {fmtDateTime(delta.previous_snapshot_time_bkk)}
-                    </p>
-                    <div className="mt-2 table-shell">
-                      <Table>
-                        <THead>
-                          <TR>
-                            <TH>Rank</TH>
-                            <TH>Strike</TH>
-                            <TH>Put Δ</TH>
-                            <TH>Call Δ</TH>
-                            <TH>Total Δ</TH>
-                          </TR>
-                        </THead>
-                        <TBody>
-                          {!rows.length ? (
-                            <TR>
-                              <TD colSpan={5}>No positive change rows.</TD>
-                            </TR>
-                          ) : (
-                            rows.map((row: any) => (
-                              <TR key={`${delta.id}-${row.rank}`}>
-                                <TD>{row.rank}</TD>
-                                <TD>{row.strike}</TD>
-                                <TD>{fmtNum(row.put_change, 2)}</TD>
-                                <TD>{fmtNum(row.call_change, 2)}</TD>
-                                <TD>{fmtNum(row.total_change, 2)}</TD>
-                              </TR>
-                            ))
-                          )}
-                        </TBody>
-                      </Table>
-                    </div>
+                  <div key={p.pair} className="flex items-center justify-between rounded-md border border-border bg-elevated/40 px-2 py-1.5">
+                    <span>{p.pair.replaceAll("_", " / ")}</span>
+                    <span className={tone === "up" ? "text-signal-up" : tone === "down" ? "text-signal-down" : "text-signal-neutral"}>{text}</span>
                   </div>
                 );
-              })
-            )}
-          </CardContent>
-        </Card>
+              })}
+            </div>
+          </div>
+        </AnalyticsPanel>
+      </section>
+
+      <section className="terminal-grid lg:grid-cols-[1fr_1.2fr]">
+        <AnalyticsPanel title="Top Active Strikes" subtitle="Top 3 by intraday and OI">
+          <div className="space-y-4">
+            {(vm.cmeSnapshots || []).slice(0, 2).map((snap: any) => {
+              const rows = (topActivesBySnapshot.get(snap.id) || []).sort((a: any, b: any) => a.rank - b.rank);
+              return (
+                <div key={snap.id}>
+                  <p className="mb-1.5 text-xs text-muted-foreground">{snap.view_type.toUpperCase()} · {snap.series_name} · {fmtDateTime(snap.snapshot_time_bkk)}</p>
+                  <CompactTable>
+                    <THead>
+                      <TR>
+                        <TH>Strike</TH>
+                        <TH>Put</TH>
+                        <TH>Call</TH>
+                        <TH>Total</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {rows.map((r: any) => (
+                        <TR key={`${snap.id}-${r.rank}`}>
+                          <TD>{r.strike}</TD>
+                          <TD className="text-signal-down">{r.put}</TD>
+                          <TD className="text-signal-up">{r.call}</TD>
+                          <TD>{r.total}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </CompactTable>
+                </div>
+              );
+            })}
+          </div>
+        </AnalyticsPanel>
+
+        <AnalyticsPanel title="Latest CME Strike Changes" subtitle="Current vs previous snapshot (same series)">
+          <div className="space-y-4">
+            {[...latestDeltaByView.values()].map((delta: any) => {
+              const rows = (vm.cmeTopStrikeChanges || []).filter((r: any) => r.delta_id === delta.id).sort((a: any, b: any) => a.rank - b.rank);
+              return (
+                <div key={delta.id} className="rounded-lg border border-border bg-elevated/45 p-3">
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span>{delta.view_type.toUpperCase()} · {delta.series_name}</span>
+                    <span className="text-muted-foreground">{fmtDateTime(delta.snapshot_time_bkk)} vs {fmtDateTime(delta.previous_snapshot_time_bkk)}</span>
+                  </div>
+                  <CompactTable>
+                    <THead>
+                      <TR>
+                        <TH>Rank</TH>
+                        <TH>Strike</TH>
+                        <TH>Put Δ</TH>
+                        <TH>Call Δ</TH>
+                        <TH>Total Δ</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {rows.length === 0 ? (
+                        <TR><TD colSpan={5}>No positive change rows.</TD></TR>
+                      ) : rows.map((r: any) => (
+                        <TR key={`${delta.id}-${r.rank}`}>
+                          <TD>{r.rank}</TD>
+                          <TD>{r.strike}</TD>
+                          <TD className={toneOf(r.put_change) === "up" ? "text-signal-up" : toneOf(r.put_change) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(r.put_change, 2)}</TD>
+                          <TD className={toneOf(r.call_change) === "up" ? "text-signal-up" : toneOf(r.call_change) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(r.call_change, 2)}</TD>
+                          <TD className={toneOf(r.total_change) === "up" ? "text-signal-up" : toneOf(r.total_change) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(r.total_change, 2)}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </CompactTable>
+                </div>
+              );
+            })}
+          </div>
+        </AnalyticsPanel>
       </section>
     </AppShell>
   );

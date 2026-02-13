@@ -5,26 +5,37 @@
 @tailwind utilities;
 
 :root {
-  --background: 220 52% 9%;
-  --background-2: 219 46% 13%;
-  --foreground: 220 24% 93%;
-  --card: 219 45% 18%;
-  --card-foreground: 220 22% 93%;
-  --border: 214 35% 32%;
-  --input: 214 34% 34%;
-  --ring: 191 83% 62%;
-  --primary: 194 85% 54%;
-  --primary-foreground: 216 60% 10%;
-  --accent: 44 93% 63%;
-  --accent-foreground: 210 58% 14%;
-  --muted: 218 32% 22%;
-  --muted-foreground: 215 26% 72%;
-  --success: 151 72% 46%;
-  --success-foreground: 147 100% 8%;
-  --warning: 42 95% 58%;
-  --warning-foreground: 31 98% 11%;
-  --danger: 2 82% 63%;
+  --background: 225 34% 7%;
+  --foreground: 220 20% 92%;
+
+  --bg-base: 225 36% 7%;
+  --bg-panel: 225 31% 10%;
+  --bg-elevated: 225 27% 13%;
+
+  --card: 225 28% 10%;
+  --card-foreground: 220 19% 92%;
+  --border: 222 20% 20%;
+  --input: 222 21% 26%;
+  --ring: 170 70% 48%;
+
+  --primary: 170 70% 48%;
+  --primary-foreground: 180 100% 8%;
+  --accent: 45 91% 61%;
+  --accent-foreground: 40 100% 11%;
+
+  --muted: 223 17% 16%;
+  --muted-foreground: 219 14% 66%;
+
+  --success: 152 70% 44%;
+  --success-foreground: 149 100% 8%;
+  --warning: 43 92% 57%;
+  --warning-foreground: 34 100% 10%;
+  --danger: 1 84% 62%;
   --danger-foreground: 0 100% 96%;
+
+  --signal-up: 152 70% 44%;
+  --signal-down: 1 84% 62%;
+  --signal-neutral: 217 10% 66%;
 }
 
 * {
@@ -36,13 +47,36 @@ body {
   @apply bg-background text-foreground antialiased;
 }
 
+body {
+  background:
+    radial-gradient(circle at 12% 8%, hsl(var(--primary) / 0.14), transparent 28%),
+    radial-gradient(circle at 88% 18%, hsl(var(--accent) / 0.1), transparent 26%),
+    linear-gradient(160deg, hsl(var(--bg-base)), hsl(var(--background)) 60%, hsl(var(--bg-panel)));
+}
+
 @layer components {
   .table-shell {
-    @apply overflow-x-auto rounded-lg border border-border;
+    @apply overflow-x-auto rounded-lg border border-border bg-panel/50;
   }
 
   .table-shell table {
     @apply min-w-full;
+  }
+
+  .metric-xl {
+    @apply text-3xl font-semibold tracking-tight md:text-[2.15rem];
+  }
+
+  .metric-lg {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  .section-title {
+    @apply text-sm font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  .terminal-grid {
+    @apply grid gap-4;
   }
 }
 

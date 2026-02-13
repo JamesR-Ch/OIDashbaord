@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "../../components/layout/app-shell";
 import { PageHeader } from "../../components/layout/page-header";
-import { Badge } from "../../components/ui/badge";
+import { AnalyticsPanel } from "../../components/dashboard/analytics-panel";
+import { CompactTable, TBody, TD, TH, THead, TR } from "../../components/dashboard/compact-table";
+import { SignalChip } from "../../components/dashboard/signal-chip";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Separator } from "../../components/ui/separator";
-import { Table, TBody, TD, TH, THead, TR } from "../../components/ui/table";
 import { fmtDateTime } from "../../lib/format";
 
 interface LinkState {
@@ -38,7 +37,6 @@ interface WebhookLogState {
 }
 
 interface WebhookTelemetryState {
-  window: string;
   total: number;
   success_2xx: number;
   client_4xx: number;
@@ -51,12 +49,10 @@ interface WorkerHealthState {
   ok: boolean;
   now_utc?: string;
   running_jobs?: string[];
-  latest_jobs?: JobRunState[];
   symbol_sessions?: Array<{
     symbol: string;
     open: boolean;
     reason: string;
-    session_time: string;
   }>;
   symbol_session_modes?: Record<string, string>;
   error?: string;
@@ -80,13 +76,6 @@ function renderJobDetails(job: JobRunState): string {
   if (typeof reason === "string" && reason.length > 0) {
     return durationMs != null ? `${reason} (${durationMs} ms)` : reason;
   }
-  const gate = job.metadata?.gate;
-  if (gate && typeof gate === "object") {
-    const gateReason = (gate as { reason?: unknown }).reason;
-    if (typeof gateReason === "string" && gateReason.length > 0) {
-      return durationMs != null ? `gate:${gateReason} (${durationMs} ms)` : `gate:${gateReason}`;
-    }
-  }
   return durationMs != null ? `${durationMs} ms` : "-";
 }
 
@@ -104,9 +93,7 @@ export default function SettingsPage() {
   const [runningJob, setRunningJob] = useState<"relation" | "cme" | "both" | "">("");
 
   async function loadCurrent() {
-    const res = await fetch("/api/settings/cme-link", {
-      cache: "no-store"
-    });
+    const res = await fetch("/api/settings/cme-link", { cache: "no-store" });
     const json = await res.json();
     if (res.status === 401) {
       router.replace("/login");
@@ -125,9 +112,7 @@ export default function SettingsPage() {
   }
 
   async function loadSystemStatus() {
-    const res = await fetch("/api/settings/system", {
-      cache: "no-store"
-    });
+    const res = await fetch("/api/settings/system", { cache: "no-store" });
     if (res.status === 401) {
       router.replace("/login");
       return;
@@ -152,15 +137,11 @@ export default function SettingsPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage("saving...");
+
     const res = await fetch("/api/settings/cme-link", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        url,
-        effective_date_bkk: date
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, effective_date_bkk: date })
     });
 
     const json = await res.json();
@@ -188,9 +169,7 @@ export default function SettingsPage() {
 
     const res = await fetch("/api/settings/run-now", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ job })
     });
 
@@ -218,237 +197,146 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <PageHeader
-        title="Settings"
-        subtitle="Admin-only control plane: CME daily link, run-now triggers, health, and webhook telemetry."
-      />
+      <PageHeader title="Settings" subtitle="Admin only · uses current session cookie · operational control surface." />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>CME Daily Link Update</CardTitle>
-          <CardDescription>
-            OI/Intraday worker is blocked until this link is updated for current BKK trade date after 05:30.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="trade_date">Trade Date (BKK)</Label>
-                <Input id="trade_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="url">QuikStrike URL</Label>
-                <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} required placeholder="https://cmegroup-tools.quikstrike.net/..." />
-              </div>
+      <section className="terminal-grid xl:grid-cols-2">
+        <AnalyticsPanel title="Daily CME Link Update" subtitle="Admin only. Required after 05:30 GMT+7.">
+          <form onSubmit={onSubmit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="trade_date">Trade Date (BKK)</Label>
+              <Input id="trade_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="url">QuikStrike URL</Label>
+              <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} required placeholder="https://cmegroup-tools.quikstrike.net/..." />
             </div>
             <Button type="submit">Save Daily Link</Button>
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-xs text-muted-foreground">{message}</p>
           </form>
 
           {latest ? (
-            <div className="grid gap-2 rounded-lg border border-border bg-card/40 p-3 text-sm md:grid-cols-2">
+            <div className="mt-3 rounded-lg border border-border bg-elevated/45 p-3 text-xs">
               <p><span className="text-muted-foreground">Latest Date:</span> {latest.trade_date_bkk}</p>
               <p><span className="text-muted-foreground">Status:</span> {latest.status}</p>
               <p><span className="text-muted-foreground">Updated At:</span> {fmtDateTime(latest.updated_at)}</p>
               <p><span className="text-muted-foreground">Updated By:</span> {latest.updated_by}</p>
             </div>
           ) : null}
+        </AnalyticsPanel>
 
-          <Separator />
-
-          <div>
-            <h3 className="text-sm font-semibold">Run Jobs Now</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Admin-only immediate run without waiting for xx:00/xx:30.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("relation")}>
-                Run Relation Now
-              </Button>
-              <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("cme")}>
-                Run CME Now
-              </Button>
-              <Button disabled={runningJob !== ""} onClick={() => runNow("both")}>
-                Run Both Now
-              </Button>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">{runNowMessage}</p>
+        <AnalyticsPanel title="Run Controls" subtitle="Last successful run should appear in Job Status panel.">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("relation")}>Run Relation Now</Button>
+            <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("cme")}>Run CME Now</Button>
+            <Button disabled={runningJob !== ""} onClick={() => runNow("both")}>Run Both Now</Button>
           </div>
-        </CardContent>
-      </Card>
+          <p className="mt-2 text-xs text-muted-foreground">{runNowMessage}</p>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Latest Run Status</CardTitle>
-            <CardDescription>Most recent worker executions from job_runs.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="table-shell">
-              <Table>
+          {alerts ? (
+            <div className="mt-4 space-y-2 text-xs">
+              <div className="rounded-md border border-border bg-elevated/45 p-2">
+                Relation: {alerts.relation_stale ? "stale" : "ok"} · age={alerts.relation_age_min ?? "-"}m · status={alerts.relation_last_status || "-"}
+              </div>
+              <div className="rounded-md border border-border bg-elevated/45 p-2">
+                CME: {alerts.cme_stale ? "stale" : "ok"} · age={alerts.cme_age_min ?? "-"}m · status={alerts.cme_last_status || "-"}
+              </div>
+            </div>
+          ) : null}
+        </AnalyticsPanel>
+      </section>
+
+      <section className="terminal-grid xl:grid-cols-2">
+        <AnalyticsPanel title="Latest Job Status" subtitle="Worker execution log">
+          <CompactTable>
+            <THead>
+              <TR><TH>Job</TH><TH>Status</TH><TH>Details</TH><TH>Started</TH><TH>Finished</TH></TR>
+            </THead>
+            <TBody>
+              {recentJobs.map((job, idx) => (
+                <TR key={`${job.job_name}-${job.started_at}-${idx}`}>
+                  <TD>{job.job_name}</TD>
+                  <TD>
+                    <SignalChip
+                      label={job.status}
+                      tone={job.status === "success" ? "up" : job.status === "failed" ? "down" : "neutral"}
+                    />
+                  </TD>
+                  <TD>{renderJobDetails(job)}</TD>
+                  <TD>{fmtDateTime(job.started_at)}</TD>
+                  <TD>{job.finished_at ? fmtDateTime(job.finished_at) : "-"}</TD>
+                </TR>
+              ))}
+            </TBody>
+          </CompactTable>
+        </AnalyticsPanel>
+
+        <AnalyticsPanel title="Worker Health" subtitle="Symbol sessions and runtime status">
+          {!workerHealth ? (
+            <p className="text-xs text-muted-foreground">Health telemetry unavailable.</p>
+          ) : workerHealth.ok ? (
+            <>
+              <p className="mb-2 text-xs text-muted-foreground">Worker UTC: {workerHealth.now_utc ? fmtDateTime(workerHealth.now_utc) : "-"}</p>
+              <CompactTable>
                 <THead>
-                  <TR>
-                    <TH>Job</TH>
-                    <TH>Status</TH>
-                    <TH>Details</TH>
-                    <TH>Started</TH>
-                    <TH>Finished</TH>
-                  </TR>
+                  <TR><TH>Symbol</TH><TH>Mode</TH><TH>Open</TH><TH>Reason</TH></TR>
                 </THead>
                 <TBody>
-                  {recentJobs.map((job, idx) => (
-                    <TR key={`${job.job_name}-${job.started_at}-${idx}`}>
-                      <TD>{job.job_name}</TD>
-                      <TD>
-                        <Badge variant={job.status === "success" ? "success" : job.status === "failed" ? "warning" : "outline"}>
-                          {job.status}
-                        </Badge>
-                      </TD>
-                      <TD>{renderJobDetails(job)}</TD>
-                      <TD>{fmtDateTime(job.started_at)}</TD>
-                      <TD>{job.finished_at ? fmtDateTime(job.finished_at) : "-"}</TD>
+                  {(workerHealth.symbol_sessions || []).map((row, idx) => (
+                    <TR key={`${row.symbol}-${idx}`}>
+                      <TD>{row.symbol}</TD>
+                      <TD>{workerHealth.symbol_session_modes?.[row.symbol] || "auto"}</TD>
+                      <TD>{row.open ? "yes" : "no"}</TD>
+                      <TD>{row.reason}</TD>
                     </TR>
                   ))}
                 </TBody>
-              </Table>
+              </CompactTable>
+            </>
+          ) : (
+            <p className="text-xs text-danger-foreground">{workerHealth.error || "worker health check failed"}</p>
+          )}
+        </AnalyticsPanel>
+      </section>
+
+      <AnalyticsPanel title="Webhook Telemetry" subtitle="TradingView traffic and recent request status">
+        {!webhookTelemetry ? (
+          <p className="text-xs text-muted-foreground">Telemetry unavailable.</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+              <div className="rounded-md border border-border bg-elevated/45 p-2">Total: {webhookTelemetry.total}</div>
+              <div className="rounded-md border border-border bg-elevated/45 p-2">2xx: {webhookTelemetry.success_2xx}</div>
+              <div className="rounded-md border border-border bg-elevated/45 p-2">4xx: {webhookTelemetry.client_4xx}</div>
+              <div className="rounded-md border border-border bg-elevated/45 p-2">5xx: {webhookTelemetry.server_5xx}</div>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>System Alerts</CardTitle>
-            <CardDescription>Staleness and latest run outcomes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!alerts ? (
-              <p className="text-sm text-muted-foreground">No alert state available.</p>
-            ) : (
-              <div className="space-y-3 text-sm">
-                <div className="rounded-lg border border-border bg-card/40 p-3">
-                  <p className="font-medium">Relation freshness</p>
-                  <p className="mt-1 text-muted-foreground">
-                    {alerts.relation_stale ? "stale" : "ok"} · age={alerts.relation_age_min ?? "-"} min · status={alerts.relation_last_status || "-"}
-                    {alerts.relation_skip_reason ? ` · reason=${alerts.relation_skip_reason}` : ""}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border bg-card/40 p-3">
-                  <p className="font-medium">CME freshness</p>
-                  <p className="mt-1 text-muted-foreground">
-                    {alerts.cme_stale ? "stale" : "ok"} · age={alerts.cme_age_min ?? "-"} min · status={alerts.cme_last_status || "-"}
-                    {alerts.cme_skip_reason ? ` · reason=${alerts.cme_skip_reason}` : ""}
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+            <section className="terminal-grid md:grid-cols-2">
+              <CompactTable>
+                <THead><TR><TH>Top Note</TH><TH>Count</TH></TR></THead>
+                <TBody>
+                  {(webhookTelemetry.top_notes || []).map((row, idx) => (
+                    <TR key={`${row.note}-${idx}`}><TD>{row.note}</TD><TD>{row.count}</TD></TR>
+                  ))}
+                </TBody>
+              </CompactTable>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Worker Health</CardTitle>
-            <CardDescription>Runtime health and symbol session status</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            {!workerHealth ? (
-              <p className="text-muted-foreground">Worker health telemetry unavailable.</p>
-            ) : workerHealth.ok ? (
-              <>
-                <p><span className="text-muted-foreground">Worker UTC:</span> {workerHealth.now_utc ? fmtDateTime(workerHealth.now_utc) : "-"}</p>
-                <p><span className="text-muted-foreground">Running jobs:</span> {workerHealth.running_jobs?.length ? workerHealth.running_jobs.join(", ") : "-"}</p>
-                <div className="table-shell">
-                  <Table>
-                    <THead>
-                      <TR>
-                        <TH>Symbol</TH>
-                        <TH>Mode</TH>
-                        <TH>Open</TH>
-                        <TH>Reason</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {(workerHealth.symbol_sessions || []).map((row, idx) => (
-                        <TR key={`${row.symbol}-${idx}`}>
-                          <TD>{row.symbol}</TD>
-                          <TD>{workerHealth.symbol_session_modes?.[row.symbol] || "auto"}</TD>
-                          <TD>{row.open ? "yes" : "no"}</TD>
-                          <TD>{row.reason}</TD>
-                        </TR>
-                      ))}
-                    </TBody>
-                  </Table>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-danger-foreground">{workerHealth.error || "worker health check failed"}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Webhook Telemetry</CardTitle>
-            <CardDescription>TradingView webhook traffic and status distribution (1h)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!webhookTelemetry ? (
-              <p className="text-sm text-muted-foreground">Telemetry unavailable (migration 005 required).</p>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
-                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">Total:</span> {webhookTelemetry.total}</div>
-                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">2xx:</span> {webhookTelemetry.success_2xx}</div>
-                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">4xx:</span> {webhookTelemetry.client_4xx}</div>
-                  <div className="rounded-md border border-border bg-card/40 p-2"><span className="text-muted-foreground">5xx:</span> {webhookTelemetry.server_5xx}</div>
-                </div>
-
-                <div className="table-shell">
-                  <Table>
-                    <THead>
-                      <TR>
-                        <TH>Top Note</TH>
-                        <TH>Count</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {(webhookTelemetry.top_notes || []).map((row, idx) => (
-                        <TR key={`${row.note}-${idx}`}>
-                          <TD>{row.note}</TD>
-                          <TD>{row.count}</TD>
-                        </TR>
-                      ))}
-                    </TBody>
-                  </Table>
-                </div>
-
-                <div className="table-shell">
-                  <Table>
-                    <THead>
-                      <TR>
-                        <TH>Time</TH>
-                        <TH>Status</TH>
-                        <TH>IP</TH>
-                        <TH>Note</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {(webhookTelemetry.recent || []).map((row, idx) => (
-                        <TR key={`${row.received_at}-${row.ip}-${idx}`}>
-                          <TD>{fmtDateTime(row.received_at)}</TD>
-                          <TD>{row.status_code}</TD>
-                          <TD>{row.ip}</TD>
-                          <TD>{row.note || "-"}</TD>
-                        </TR>
-                      ))}
-                    </TBody>
-                  </Table>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+              <CompactTable>
+                <THead><TR><TH>Time</TH><TH>Status</TH><TH>IP</TH><TH>Note</TH></TR></THead>
+                <TBody>
+                  {(webhookTelemetry.recent || []).map((row, idx) => (
+                    <TR key={`${row.received_at}-${row.ip}-${idx}`}>
+                      <TD>{fmtDateTime(row.received_at)}</TD>
+                      <TD>{row.status_code}</TD>
+                      <TD>{row.ip}</TD>
+                      <TD>{row.note || "-"}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </CompactTable>
+            </section>
+          </div>
+        )}
+      </AnalyticsPanel>
     </AppShell>
   );
 }

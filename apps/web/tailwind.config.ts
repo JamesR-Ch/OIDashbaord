@@ -12,7 +12,7 @@ const config: Config = {
       center: true,
       padding: "1rem",
       screens: {
-        "2xl": "1400px"
+        "2xl": "1440px"
       }
     },
     extend: {
@@ -23,6 +23,9 @@ const config: Config = {
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        base: "hsl(var(--bg-base))",
+        panel: "hsl(var(--bg-panel))",
+        elevated: "hsl(var(--bg-elevated))",
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))"
@@ -53,6 +56,11 @@ const config: Config = {
         danger: {
           DEFAULT: "hsl(var(--danger))",
           foreground: "hsl(var(--danger-foreground))"
+        },
+        signal: {
+          up: "hsl(var(--signal-up))",
+          down: "hsl(var(--signal-down))",
+          neutral: "hsl(var(--signal-neutral))"
         }
       },
       borderRadius: {
@@ -62,8 +70,9 @@ const config: Config = {
         sm: "0.4rem"
       },
       boxShadow: {
-        panel: "0 16px 45px -20px rgba(0,0,0,0.48)",
-        glow: "0 0 0 1px rgba(125, 211, 252, 0.35), 0 18px 40px -20px rgba(14, 165, 233, 0.45)"
+        panel: "0 18px 45px -24px rgba(0,0,0,0.68)",
+        glow: "0 0 0 1px rgba(45, 212, 191, 0.3), 0 18px 40px -18px rgba(45, 212, 191, 0.28)",
+        redglow: "0 0 0 1px rgba(248, 113, 113, 0.35), 0 18px 40px -18px rgba(248, 113, 113, 0.25)"
       }
     }
   },
