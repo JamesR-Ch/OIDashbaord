@@ -1,23 +1,13 @@
+"use client";
+
 import { TopNav } from "../../components/nav";
 import { SectionCard } from "../../components/section";
+import { useOverviewData } from "../../lib/use-overview-data";
 
 export const dynamic = "force-dynamic";
 
-async function getOverview() {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "http://localhost:3000");
-  try {
-    const res = await fetch(`${baseUrl}/api/dashboard/overview-public`, { cache: "no-store" });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-export default async function CmePage() {
-  const data = await getOverview();
+export default function CmePage() {
+  const { data, loading, error } = useOverviewData(15000);
   const cme = data?.cme_snapshots || [];
   const topActives = data?.top_actives || [];
   const deltas = data?.cme_deltas || [];
@@ -46,6 +36,8 @@ export default async function CmePage() {
   return (
     <main className="container">
       <TopNav />
+      {loading ? <p style={{ color: "var(--muted)", marginBottom: 10 }}>Loading data...</p> : null}
+      {error ? <p className="badge-warn" style={{ marginBottom: 10 }}>Data load error: {error}</p> : null}
       <SectionCard title="CME Detail" subtitle="OI and Intraday with top strikes">
         <table className="table">
           <thead>
