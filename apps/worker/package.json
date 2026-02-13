@@ -12,7 +12,7 @@
     "sanity": "tsx src/sanity-check.ts",
     "test": "npm run build && node dist/apps/worker/src/tests/cme-change.test.js",
     "build": "npm run build -w @oid/shared && tsc -p tsconfig.json",
-    "start": "node --experimental-specifier-resolution=node dist/apps/worker/src/index.js",
+    "start": "tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo 'No lint configured for worker'"
   },
@@ -23,13 +23,13 @@
     "luxon": "^3.5.0",
     "node-cron": "^3.0.3",
     "pino": "^9.6.0",
-    "playwright": "^1.50.0"
+    "playwright": "^1.50.0",
+    "tsx": "^4.20.5"
   },
   "devDependencies": {
     "@types/luxon": "^3.4.2",
     "@types/node-cron": "^3.0.11",
     "@types/node": "^22.10.6",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
 }
