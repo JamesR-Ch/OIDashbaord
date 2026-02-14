@@ -44,23 +44,24 @@ export default function RelationsPage() {
       {loading ? <LoadingState title="Loading relations" /> : null}
       {error ? <ErrorState message={error} /> : null}
 
-      {!vm.relation ? (
-        <AnalyticsPanel title="No relation data" subtitle="Run relation job or wait for schedule.">
-          <p className="text-sm text-muted-foreground">No snapshot currently available.</p>
-        </AnalyticsPanel>
-      ) : (
-        <>
+      <div className="space-y-6 md:space-y-7">
+        {!vm.relation ? (
+          <AnalyticsPanel title="No relation data" subtitle="Run relation job or wait for schedule.">
+            <p className="text-sm text-muted-foreground">No snapshot currently available.</p>
+          </AnalyticsPanel>
+        ) : (
+          <>
           <AnalyticsPanel title="Relation Heatmap" subtitle={`Window ${fmtDateTime(vm.relation.window_start_bkk)} - ${fmtDateTime(vm.relation.window_end_bkk)}`}>
             <div className="grid grid-cols-4 gap-2">
               <div />
               {symbols.map((s) => <div key={s} className="text-center text-[11px] text-muted-foreground">{s.replace("USD", "")}</div>)}
               {symbols.map((row) => (
-                <>
-                  <div key={`${row}-lbl`} className="text-[11px] text-muted-foreground">{row.replace("USD", "")}</div>
+                <div key={row} className="contents">
+                  <div className="text-[11px] text-muted-foreground">{row.replace("USD", "")}</div>
                   {symbols.map((col) => (
                     <HeatCell key={`${row}-${col}`} value={corr(row, col)} isDiagonal={row === col} />
                   ))}
-                </>
+                </div>
               ))}
             </div>
 
@@ -119,8 +120,9 @@ export default function RelationsPage() {
               </CompactTable>
             </AnalyticsPanel>
           </section>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </AppShell>
   );
 }

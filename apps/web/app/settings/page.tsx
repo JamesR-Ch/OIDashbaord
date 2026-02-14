@@ -237,6 +237,7 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
+      <div className="space-y-6 md:space-y-7">
       <section className="terminal-grid xl:grid-cols-2">
         <AnalyticsPanel title="Daily CME Link Update" subtitle="Admin only. Required after 05:30 GMT+7.">
           <form onSubmit={onSubmit} className="space-y-3">
@@ -391,6 +392,7 @@ export default function SettingsPage() {
           </div>
         )}
       </AnalyticsPanel>
+      </div>
     </AppShell>
   );
 }

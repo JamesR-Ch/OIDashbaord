@@ -74,7 +74,7 @@ body {
   }
 
   .terminal-grid {
-    @apply grid gap-7 md:gap-8 xl:gap-9;
+    @apply grid gap-5 md:gap-6 xl:gap-7;
   }
 
   .surface-card {

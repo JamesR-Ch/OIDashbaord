@@ -58,7 +58,8 @@ export default function OverviewPage() {
       {loading ? <LoadingState title="Loading dashboard" /> : null}
       {error ? <ErrorState message={error} /> : null}
 
-      <section className="terminal-grid mt-8 md:grid-cols-3">
+      <div className="space-y-6 md:space-y-7">
+      <section className="terminal-grid md:grid-cols-3">
         {(vm.prices || []).map((p: any) => {
           const tone = toneOf(p.minute_pct_change);
           return (
@@ -76,7 +77,7 @@ export default function OverviewPage() {
         })}
       </section>
 
-      <section className="terminal-grid mt-8 lg:grid-cols-[1.75fr_1fr]">
+      <section className="terminal-grid lg:grid-cols-[1.75fr_1fr]">
         <AnalyticsPanel title="CME Gold Options" subtitle="Put/Call dynamics and structure signal by view">
           <div className="space-y-5">
             {[intraday, oi].filter(Boolean).map((snap: any) => {
@@ -131,7 +132,7 @@ export default function OverviewPage() {
         </AnalyticsPanel>
       </section>
 
-      <section className="terminal-grid mt-8 lg:grid-cols-[1fr_1.15fr]">
+      <section className="terminal-grid lg:grid-cols-[1fr_1.15fr]">
         <AnalyticsPanel title="Top Active Strikes" subtitle="Top 3 by intraday and OI">
           <div className="space-y-4">
             {(vm.cmeSnapshots || []).slice(0, 2).map((snap: any) => {
@@ -205,6 +206,7 @@ export default function OverviewPage() {
           </div>
         </AnalyticsPanel>
       </section>
+      </div>
     </AppShell>
   );
 }

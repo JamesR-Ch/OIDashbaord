@@ -45,6 +45,7 @@ export default function CmePage() {
       {loading ? <LoadingState title="Loading CME" /> : null}
       {error ? <ErrorState message={error} /> : null}
 
+      <div className="space-y-6 md:space-y-7">
       <section className="terminal-grid lg:grid-cols-2">
         {[intraday, oi].filter(Boolean).map((snap: any) => {
           const sk = tone((snap.call_total ?? 0) - (snap.put_total ?? 0));
@@ -170,6 +171,7 @@ export default function CmePage() {
           </div>
         </AnalyticsPanel>
       </section>
+      </div>
     </AppShell>
   );
 }
