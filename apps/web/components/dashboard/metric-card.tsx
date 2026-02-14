@@ -14,12 +14,12 @@ export function MetricCard({
 }) {
   return (
     <Card className="bg-panel/90">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-1.5">
         <CardTitle className="text-xs uppercase tracking-[0.1em] text-muted-foreground">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="metric-lg">{value}</p>
+          <p className="text-[2rem] font-semibold leading-none tracking-tight">{value}</p>
           {signal ? <SignalChip label={signal.label} tone={signal.tone} /> : null}
         </div>
         {subtitle ? <CardDescription className="mt-1">{subtitle}</CardDescription> : null}

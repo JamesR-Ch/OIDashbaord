@@ -43,8 +43,8 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
 
   return (
     <main className="min-h-screen bg-transparent text-foreground">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1680px] grid-cols-1 md:grid-cols-[270px_1fr]">
-        <aside className="border-b border-border bg-panel p-4 md:border-b-0 md:border-r md:p-6">
+      <div className="mx-auto grid min-h-screen w-full max-w-[1760px] grid-cols-1 md:grid-cols-[280px_1fr]">
+        <aside className="border-b border-border bg-panel p-5 md:border-b-0 md:border-r md:p-7">
           <Link href="/overview" className="mb-7 flex items-center gap-3 rounded-lg border border-border bg-elevated px-3 py-3.5">
             <Image src="/logo.png" alt="OIDashboard logo" width={34} height={34} className="rounded-md object-cover" />
             <div>
@@ -82,8 +82,8 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
           </div>
         </aside>
 
-        <div className="p-4 md:p-6">
-          <header className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-panel px-4 py-3">
+        <div className="px-5 pb-8 pt-5 md:px-8 md:pb-12 md:pt-7 xl:px-10">
+          <header className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-panel px-5 py-3.5">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-success" />
               <span className="text-xs text-muted-foreground">Connected</span>

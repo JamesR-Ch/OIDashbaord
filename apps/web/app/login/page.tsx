@@ -9,7 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { getBrowserSupabaseClient } from "../../lib/supabase-browser";
-import { clearServerSession, signInWithGithub, signInWithPassword, signOut, syncServerSession } from "../../lib/auth-client";
+import {
+  clearServerSession,
+  getSessionSyncRetryInMs,
+  hasRecentlySyncedToken,
+  noteSessionSyncSuccess,
+  shouldCooldownSessionSync,
+  signInWithGithub,
+  signInWithPassword,
+  signOut,
+  syncServerSession
+} from "../../lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,6 +41,16 @@ export default function LoginPage() {
 
     async function syncThenRedirect(accessToken: string) {
       if (!accessToken || syncingRef.current || lastSyncedTokenRef.current === accessToken) return;
+      if (hasRecentlySyncedToken(accessToken)) {
+        lastSyncedTokenRef.current = accessToken;
+        router.replace(nextPath as any);
+        return;
+      }
+      if (shouldCooldownSessionSync()) {
+        const retryInSec = Math.ceil(getSessionSyncRetryInMs() / 1000);
+        setMessage(`Session sync cooling down. Try again in ~${retryInSec}s.`);
+        return;
+      }
 
       syncingRef.current = true;
       const ok = await syncServerSession(accessToken);
@@ -41,6 +61,7 @@ export default function LoginPage() {
         return;
       }
 
+      noteSessionSyncSuccess(accessToken);
       lastSyncedTokenRef.current = accessToken;
       router.replace(nextPath as any);
     }
@@ -78,11 +99,17 @@ export default function LoginPage() {
     const supabase = getBrowserSupabaseClient();
     const { data } = await supabase.auth.getSession();
     if (data.session?.access_token) {
+      if (shouldCooldownSessionSync()) {
+        const retryInSec = Math.ceil(getSessionSyncRetryInMs() / 1000);
+        setMessage(`Sign-in succeeded, sync cooling down. Retry in ~${retryInSec}s.`);
+        return;
+      }
       const ok = await syncServerSession(data.session.access_token);
       if (!ok) {
         setMessage("Sign-in succeeded, but session sync is rate-limited. Please wait a few seconds and retry.");
         return;
       }
+      noteSessionSyncSuccess(data.session.access_token);
       lastSyncedTokenRef.current = data.session.access_token;
       router.replace(nextPath as any);
       return;

@@ -74,7 +74,7 @@ body {
   }
 
   .terminal-grid {
-    @apply grid gap-5 md:gap-6;
+    @apply grid gap-7 md:gap-8 xl:gap-9;
   }
 
   .surface-card {
@@ -94,7 +94,7 @@ body {
   }
 
   .dense-kpi {
-    @apply rounded-lg border border-border bg-elevated/45 px-3 py-2;
+    @apply rounded-lg border border-border bg-elevated/45 px-4 py-3;
   }
 }
 

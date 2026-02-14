@@ -58,7 +58,7 @@ export default function OverviewPage() {
       {loading ? <LoadingState title="Loading dashboard" /> : null}
       {error ? <ErrorState message={error} /> : null}
 
-      <section className="terminal-grid md:grid-cols-3">
+      <section className="terminal-grid mt-8 md:grid-cols-3">
         {(vm.prices || []).map((p: any) => {
           const tone = toneOf(p.minute_pct_change);
           return (
@@ -76,7 +76,7 @@ export default function OverviewPage() {
         })}
       </section>
 
-      <section className="terminal-grid lg:grid-cols-[1.7fr_1fr]">
+      <section className="terminal-grid mt-8 lg:grid-cols-[1.75fr_1fr]">
         <AnalyticsPanel title="CME Gold Options" subtitle="Put/Call dynamics and structure signal by view">
           <div className="space-y-5">
             {[intraday, oi].filter(Boolean).map((snap: any) => {
@@ -102,16 +102,16 @@ export default function OverviewPage() {
 
         <AnalyticsPanel title="Relation Matrix (30m)" subtitle="Correlation heatmap and pair quick signals">
           <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2.5">
               <div />
               {symbols.map((s) => <div key={s} className="text-center text-[11px] text-muted-foreground">{s.replace("USD", "")}</div>)}
               {symbols.map((row) => (
-                <>
+                <div key={row} className="contents">
                   <div key={`${row}-lbl`} className="text-[11px] text-muted-foreground">{row.replace("USD", "")}</div>
                   {symbols.map((col) => (
                     <HeatCell key={`${row}-${col}`} value={corr(row, col)} isDiagonal={row === col} />
                   ))}
-                </>
+                </div>
               ))}
             </div>
 
@@ -131,7 +131,7 @@ export default function OverviewPage() {
         </AnalyticsPanel>
       </section>
 
-      <section className="terminal-grid lg:grid-cols-[1fr_1.2fr]">
+      <section className="terminal-grid mt-8 lg:grid-cols-[1fr_1.15fr]">
         <AnalyticsPanel title="Top Active Strikes" subtitle="Top 3 by intraday and OI">
           <div className="space-y-4">
             {(vm.cmeSnapshots || []).slice(0, 2).map((snap: any) => {

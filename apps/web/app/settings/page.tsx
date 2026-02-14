@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "../../components/layout/app-shell";
 import { PageHeader } from "../../components/layout/page-header";
 import { AnalyticsPanel } from "../../components/dashboard/analytics-panel";
@@ -69,6 +68,8 @@ interface AlertsState {
   cme_skip_reason?: string | null;
 }
 
+type AccessState = "ok" | "forbidden" | "expired" | "transient_error";
+
 function renderJobDetails(job: JobRunState): string {
   const durationMs = typeof job.metadata?.duration_ms === "number" ? job.metadata.duration_ms : null;
   if (job.error_message) return job.error_message;
@@ -80,7 +81,6 @@ function renderJobDetails(job: JobRunState): string {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const [url, setUrl] = useState("");
   const [date, setDate] = useState("");
   const [latest, setLatest] = useState<LinkState | null>(null);
@@ -91,49 +91,92 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [runNowMessage, setRunNowMessage] = useState("");
   const [runningJob, setRunningJob] = useState<"relation" | "cme" | "both" | "">("");
+  const [accessState, setAccessState] = useState<AccessState>("ok");
+  const [accessMessage, setAccessMessage] = useState("");
+  const currentRequestRef = useRef<Promise<void> | null>(null);
+  const systemRequestRef = useRef<Promise<void> | null>(null);
 
-  async function loadCurrent() {
-    const res = await fetch("/api/settings/cme-link", { cache: "no-store" });
-    const json = await res.json();
-    if (res.status === 401) {
-      router.replace("/login");
-      return;
+  const handleAccessStatus = useCallback((status: number, fallback: string) => {
+    if (status === 401) {
+      setAccessState("expired");
+      setAccessMessage("Session expired. Please sign in again.");
+      return true;
     }
-    if (res.status === 403) {
-      router.replace("/overview");
-      return;
+    if (status === 403) {
+      setAccessState("forbidden");
+      setAccessMessage("Admin role required.");
+      return true;
     }
-    if (!res.ok) {
-      setMessage(`error: ${json.error || "failed"}`);
-      return;
+    if (status >= 500) {
+      setAccessState("transient_error");
+      setAccessMessage(fallback);
+      return false;
     }
-    setLatest(json.data || null);
-    if (json.data?.url) setUrl(json.data.url);
-  }
+    setAccessState("ok");
+    setAccessMessage("");
+    return false;
+  }, []);
 
-  async function loadSystemStatus() {
-    const res = await fetch("/api/settings/system", { cache: "no-store" });
-    if (res.status === 401) {
-      router.replace("/login");
-      return;
-    }
-    if (res.status === 403) {
-      router.replace("/overview");
-      return;
-    }
-    const json = await res.json();
-    if (!res.ok) return;
-    setRecentJobs(json.recent_jobs || []);
-    setWebhookTelemetry(json.webhook_telemetry || null);
-    setWorkerHealth(json.worker_health || null);
-    setAlerts(json.alerts || null);
-  }
+  const loadCurrent = useCallback(async (signal?: AbortSignal) => {
+    if (currentRequestRef.current) return currentRequestRef.current;
+
+    const task = (async () => {
+      try {
+        const res = await fetch("/api/settings/cme-link", { cache: "no-store", signal });
+        const json = await res.json().catch(() => ({}));
+        const blocked = handleAccessStatus(res.status, "Unable to load latest CME link.");
+        if (blocked) return;
+        if (!res.ok) {
+          setMessage(`error: ${json.error || "failed"}`);
+          return;
+        }
+        setLatest(json.data || null);
+        if (json.data?.url) setUrl(json.data.url);
+      } catch (error: any) {
+        if (error?.name === "AbortError") return;
+        setAccessState("transient_error");
+        setAccessMessage("Failed to load settings. Please retry.");
+      } finally {
+        currentRequestRef.current = null;
+      }
+    })();
+
+    currentRequestRef.current = task;
+    return task;
+  }, [handleAccessStatus]);
+
+  const loadSystemStatus = useCallback(async (signal?: AbortSignal) => {
+    if (systemRequestRef.current) return systemRequestRef.current;
+
+    const task = (async () => {
+      try {
+        const res = await fetch("/api/settings/system", { cache: "no-store", signal });
+        const json = await res.json().catch(() => ({}));
+        const blocked = handleAccessStatus(res.status, "Unable to load system telemetry.");
+        if (blocked || !res.ok) return;
+        setRecentJobs(json.recent_jobs || []);
+        setWebhookTelemetry(json.webhook_telemetry || null);
+        setWorkerHealth(json.worker_health || null);
+        setAlerts(json.alerts || null);
+      } catch (error: any) {
+        if (error?.name === "AbortError") return;
+        setAccessState("transient_error");
+        setAccessMessage("Failed to load system telemetry. Please retry.");
+      } finally {
+        systemRequestRef.current = null;
+      }
+    })();
+
+    systemRequestRef.current = task;
+    return task;
+  }, [handleAccessStatus]);
 
   useEffect(() => {
     setDate(new Date().toISOString().slice(0, 10));
-    loadCurrent();
-    loadSystemStatus();
-  }, []);
+    const controller = new AbortController();
+    void Promise.all([loadCurrent(controller.signal), loadSystemStatus(controller.signal)]);
+    return () => controller.abort();
+  }, [loadCurrent, loadSystemStatus]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -146,14 +189,8 @@ export default function SettingsPage() {
     });
 
     const json = await res.json();
-    if (res.status === 401) {
-      router.replace("/login");
-      return;
-    }
-    if (res.status === 403) {
-      router.replace("/overview");
-      return;
-    }
+    const blocked = handleAccessStatus(res.status, "Unable to save CME link.");
+    if (blocked) return;
     if (!res.ok) {
       setMessage(`error: ${json.error || "failed"}`);
       return;
@@ -175,13 +212,8 @@ export default function SettingsPage() {
     });
 
     const json = await res.json();
-    if (res.status === 401) {
-      router.replace("/login");
-      setRunningJob("");
-      return;
-    }
-    if (res.status === 403) {
-      router.replace("/overview");
+    const blocked = handleAccessStatus(res.status, "Unable to trigger run.");
+    if (blocked) {
       setRunningJob("");
       return;
     }
@@ -199,6 +231,11 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <PageHeader title="Settings" subtitle="Admin only · uses current session cookie · operational control surface." />
+      {accessState !== "ok" ? (
+        <div className="mb-5 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger-foreground">
+          {accessMessage}
+        </div>
+      ) : null}
 
       <section className="terminal-grid xl:grid-cols-2">
         <AnalyticsPanel title="Daily CME Link Update" subtitle="Admin only. Required after 05:30 GMT+7.">
