@@ -4,10 +4,10 @@ import { cn } from "../../lib/utils";
 type Variant = "default" | "success" | "warning" | "outline";
 
 const variantClass: Record<Variant, string> = {
-  default: "border-primary/40 bg-primary/20 text-primary-foreground",
-  success: "border-success/40 bg-success/20 text-success-foreground",
-  warning: "border-warning/40 bg-warning/20 text-warning-foreground",
-  outline: "border-border bg-card/40 text-muted-foreground"
+  default: "border-primary/40 bg-primary/16 text-primary-foreground",
+  success: "border-success/40 bg-success/16 text-signal-up",
+  warning: "border-warning/40 bg-warning/16 text-warning-foreground",
+  outline: "border-border bg-elevated/45 text-muted-foreground"
 };
 
 export function Badge({ className, variant = "default", ...props }: React.HTMLAttributes<HTMLSpanElement> & { variant?: Variant }) {

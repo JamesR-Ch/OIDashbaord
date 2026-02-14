@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "../../components/layout/app-shell";
 import { PageHeader } from "../../components/layout/page-header";
 import { AnalyticsPanel } from "../../components/dashboard/analytics-panel";
-import { CompactTable, TBody, TD, TH, THead, TR } from "../../components/dashboard/compact-table";
+import { DecisionTable, TBody, TD, TH, THead, TR } from "../../components/dashboard/decision-table";
 import { SignalChip } from "../../components/dashboard/signal-chip";
+import { StateBlock } from "../../components/dashboard/state-block";
+import { PageSection } from "../../components/layout/page-section";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -96,7 +98,7 @@ export default function SettingsPage() {
   const currentRequestRef = useRef<Promise<void> | null>(null);
   const systemRequestRef = useRef<Promise<void> | null>(null);
 
-  const handleAccessStatus = useCallback((status: number, fallback: string) => {
+  const handleAccessStatus = useCallback((status: number, fallback: string, detail?: string) => {
     if (status === 401) {
       setAccessState("expired");
       setAccessMessage("Session expired. Please sign in again.");
@@ -107,9 +109,14 @@ export default function SettingsPage() {
       setAccessMessage("Admin role required.");
       return true;
     }
+    if (status === 429) {
+      setAccessState("transient_error");
+      setAccessMessage(detail ? `Rate limited: ${detail}` : "Rate limited. Please retry shortly.");
+      return false;
+    }
     if (status >= 500) {
       setAccessState("transient_error");
-      setAccessMessage(fallback);
+      setAccessMessage(detail || fallback);
       return false;
     }
     setAccessState("ok");
@@ -124,7 +131,7 @@ export default function SettingsPage() {
       try {
         const res = await fetch("/api/settings/cme-link", { cache: "no-store", signal });
         const json = await res.json().catch(() => ({}));
-        const blocked = handleAccessStatus(res.status, "Unable to load latest CME link.");
+        const blocked = handleAccessStatus(res.status, "Unable to load latest CME link.", json.error);
         if (blocked) return;
         if (!res.ok) {
           setMessage(`error: ${json.error || "failed"}`);
@@ -152,7 +159,7 @@ export default function SettingsPage() {
       try {
         const res = await fetch("/api/settings/system", { cache: "no-store", signal });
         const json = await res.json().catch(() => ({}));
-        const blocked = handleAccessStatus(res.status, "Unable to load system telemetry.");
+        const blocked = handleAccessStatus(res.status, "Unable to load system telemetry.", json.error);
         if (blocked || !res.ok) return;
         setRecentJobs(json.recent_jobs || []);
         setWebhookTelemetry(json.webhook_telemetry || null);
@@ -189,7 +196,7 @@ export default function SettingsPage() {
     });
 
     const json = await res.json();
-    const blocked = handleAccessStatus(res.status, "Unable to save CME link.");
+    const blocked = handleAccessStatus(res.status, "Unable to save CME link.", json.error);
     if (blocked) return;
     if (!res.ok) {
       setMessage(`error: ${json.error || "failed"}`);
@@ -212,7 +219,7 @@ export default function SettingsPage() {
     });
 
     const json = await res.json();
-    const blocked = handleAccessStatus(res.status, "Unable to trigger run.");
+    const blocked = handleAccessStatus(res.status, "Unable to trigger run.", json.error);
     if (blocked) {
       setRunningJob("");
       return;
@@ -238,7 +245,7 @@ export default function SettingsPage() {
       ) : null}
 
       <div className="space-y-6 md:space-y-7">
-      <section className="terminal-grid xl:grid-cols-2">
+      <PageSection className="xl:grid-cols-2">
         <AnalyticsPanel title="Daily CME Link Update" subtitle="Admin only. Required after 05:30 GMT+7.">
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1.5">
@@ -279,7 +286,7 @@ export default function SettingsPage() {
           ) : null}
         </AnalyticsPanel>
 
-        <AnalyticsPanel title="Run Controls" subtitle="Last successful run should appear in Job Status panel.">
+        <AnalyticsPanel title="Run Controls" subtitle="Admin only. Trigger worker jobs with current session cookie.">
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("relation")}>Run Relation Now</Button>
             <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("cme")}>Run CME Now</Button>
@@ -288,21 +295,27 @@ export default function SettingsPage() {
           <p className="mt-2 text-xs text-muted-foreground">{runNowMessage}</p>
 
           {alerts ? (
-            <div className="mt-4 space-y-2 text-xs">
-              <div className="rounded-md border border-border bg-elevated/45 p-2">
-                Relation: {alerts.relation_stale ? "stale" : "ok"} · age={alerts.relation_age_min ?? "-"}m · status={alerts.relation_last_status || "-"}
-              </div>
-              <div className="rounded-md border border-border bg-elevated/45 p-2">
-                CME: {alerts.cme_stale ? "stale" : "ok"} · age={alerts.cme_age_min ?? "-"}m · status={alerts.cme_last_status || "-"}
-              </div>
+            <div className="mt-4 grid gap-2 text-xs md:grid-cols-2">
+              <StateBlock
+                title={`Relation ${alerts.relation_stale ? "stale" : "ok"}`}
+                detail={`age=${alerts.relation_age_min ?? "-"}m · status=${alerts.relation_last_status || "-"}`}
+                tone={alerts.relation_stale ? "warning" : "success"}
+              />
+              <StateBlock
+                title={`CME ${alerts.cme_stale ? "stale" : "ok"}`}
+                detail={`age=${alerts.cme_age_min ?? "-"}m · status=${alerts.cme_last_status || "-"}`}
+                tone={alerts.cme_stale ? "warning" : "success"}
+              />
             </div>
-          ) : null}
+          ) : (
+            <StateBlock title="System alerts unavailable" detail="Waiting for worker/system telemetry." />
+          )}
         </AnalyticsPanel>
-      </section>
+      </PageSection>
 
-      <section className="terminal-grid xl:grid-cols-2">
+      <PageSection className="xl:grid-cols-2">
         <AnalyticsPanel title="Latest Job Status" subtitle="Worker execution log">
-          <CompactTable>
+          <DecisionTable>
             <THead>
               <TR><TH>Job</TH><TH>Status</TH><TH>Details</TH><TH>Started</TH><TH>Finished</TH></TR>
             </THead>
@@ -322,16 +335,16 @@ export default function SettingsPage() {
                 </TR>
               ))}
             </TBody>
-          </CompactTable>
+          </DecisionTable>
         </AnalyticsPanel>
 
         <AnalyticsPanel title="Worker Health" subtitle="Symbol sessions and runtime status">
           {!workerHealth ? (
-            <p className="text-xs text-muted-foreground">Health telemetry unavailable.</p>
+            <StateBlock title="Health telemetry unavailable" detail="Worker did not return details." />
           ) : workerHealth.ok ? (
             <>
               <p className="mb-2 text-xs text-muted-foreground">Worker UTC: {workerHealth.now_utc ? fmtDateTime(workerHealth.now_utc) : "-"}</p>
-              <CompactTable>
+              <DecisionTable compact>
                 <THead>
                   <TR><TH>Symbol</TH><TH>Mode</TH><TH>Open</TH><TH>Reason</TH></TR>
                 </THead>
@@ -345,13 +358,13 @@ export default function SettingsPage() {
                     </TR>
                   ))}
                 </TBody>
-              </CompactTable>
+              </DecisionTable>
             </>
           ) : (
-            <p className="text-xs text-danger-foreground">{workerHealth.error || "worker health check failed"}</p>
+            <StateBlock tone="danger" title="Worker health failed" detail={workerHealth.error || "worker health check failed"} />
           )}
         </AnalyticsPanel>
-      </section>
+      </PageSection>
 
       <AnalyticsPanel title="Webhook Telemetry" subtitle="TradingView traffic and recent request status">
         {!webhookTelemetry ? (
@@ -366,16 +379,16 @@ export default function SettingsPage() {
             </div>
 
             <section className="terminal-grid md:grid-cols-2">
-              <CompactTable>
+              <DecisionTable compact>
                 <THead><TR><TH>Top Note</TH><TH>Count</TH></TR></THead>
                 <TBody>
                   {(webhookTelemetry.top_notes || []).map((row, idx) => (
                     <TR key={`${row.note}-${idx}`}><TD>{row.note}</TD><TD>{row.count}</TD></TR>
                   ))}
                 </TBody>
-              </CompactTable>
+              </DecisionTable>
 
-              <CompactTable>
+              <DecisionTable compact>
                 <THead><TR><TH>Time</TH><TH>Status</TH><TH>IP</TH><TH>Note</TH></TR></THead>
                 <TBody>
                   {(webhookTelemetry.recent || []).map((row, idx) => (
@@ -387,7 +400,7 @@ export default function SettingsPage() {
                     </TR>
                   ))}
                 </TBody>
-              </CompactTable>
+              </DecisionTable>
             </section>
           </div>
         )}

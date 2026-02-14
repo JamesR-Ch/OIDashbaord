@@ -7,10 +7,10 @@ type Size = "sm" | "md";
 
 const variantClass: Record<Variant, string> = {
   default:
-    "bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/60 shadow-glow",
+    "bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/55",
   secondary:
-    "bg-card/70 text-foreground border border-border hover:bg-card",
-  ghost: "bg-transparent text-muted-foreground border border-border hover:text-foreground hover:bg-card/60",
+    "bg-elevated/70 text-foreground border border-border hover:bg-elevated",
+  ghost: "bg-transparent text-muted-foreground border border-border hover:text-foreground hover:bg-elevated/70",
   danger: "bg-danger text-danger-foreground border border-danger/80 hover:bg-danger/90"
 };
 

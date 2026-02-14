@@ -3,7 +3,7 @@ import { Skeleton } from "../ui/skeleton";
 
 export function LoadingState({ title = "Loading" }: { title?: string }) {
   return (
-    <Card>
+    <Card className="surface-panel bg-panel/92">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>Fetching latest data.</CardDescription>
@@ -19,7 +19,7 @@ export function LoadingState({ title = "Loading" }: { title?: string }) {
 
 export function ErrorState({ message }: { message: string }) {
   return (
-    <Card className="border-danger/60">
+    <Card className="surface-panel border-danger/60 bg-danger/10">
       <CardHeader>
         <CardTitle>Data Error</CardTitle>
         <CardDescription className="text-danger-foreground">{message}</CardDescription>
@@ -30,7 +30,7 @@ export function ErrorState({ message }: { message: string }) {
 
 export function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <Card>
+    <Card className="surface-panel bg-panel/92">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{subtitle}</CardDescription>

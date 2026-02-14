@@ -3,6 +3,14 @@ export function fmtNum(value: unknown, digits = 2): string {
   return value.toFixed(digits);
 }
 
+export function fmtSignedNum(value: unknown, digits = 2): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "-";
+  const abs = Math.abs(value).toFixed(digits);
+  if (value > 0) return `+${abs}`;
+  if (value < 0) return `-${abs}`;
+  return abs;
+}
+
 export function fmtCompact(value: unknown, digits = 2): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "-";
   return new Intl.NumberFormat("en-US", {
@@ -21,6 +29,18 @@ export function fmtDateTime(value: string | null | undefined): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleString();
+}
+
+export function fmtDateTimeShort(value: string | null | undefined): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
 }
 
 export function ageMinutes(iso: string | null | undefined): number | null {

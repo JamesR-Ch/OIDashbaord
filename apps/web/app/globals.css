@@ -1,41 +1,41 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 225 34% 7%;
-  --foreground: 220 20% 92%;
+  --background: 228 32% 6%;
+  --foreground: 220 16% 92%;
 
-  --bg-base: 225 36% 7%;
-  --bg-panel: 225 31% 11%;
-  --bg-elevated: 225 27% 14%;
+  --bg-base: 228 35% 6%;
+  --bg-panel: 227 27% 10%;
+  --bg-elevated: 226 24% 13%;
 
-  --card: 225 28% 10%;
-  --card-foreground: 220 19% 92%;
-  --border: 221 19% 24%;
-  --input: 222 21% 26%;
-  --ring: 170 70% 48%;
+  --card: 227 28% 9%;
+  --card-foreground: 220 16% 92%;
+  --border: 223 18% 22%;
+  --input: 223 20% 24%;
+  --ring: 164 74% 45%;
 
-  --primary: 170 70% 48%;
-  --primary-foreground: 180 100% 8%;
-  --accent: 45 91% 61%;
-  --accent-foreground: 40 100% 11%;
+  --primary: 164 74% 45%;
+  --primary-foreground: 161 100% 8%;
+  --accent: 42 92% 58%;
+  --accent-foreground: 34 100% 12%;
 
-  --muted: 223 17% 16%;
-  --muted-foreground: 219 14% 74%;
+  --muted: 224 16% 15%;
+  --muted-foreground: 218 13% 72%;
 
-  --success: 152 70% 44%;
-  --success-foreground: 149 100% 8%;
-  --warning: 43 92% 57%;
-  --warning-foreground: 34 100% 10%;
-  --danger: 1 84% 62%;
+  --success: 154 70% 42%;
+  --success-foreground: 154 100% 9%;
+  --warning: 42 89% 56%;
+  --warning-foreground: 30 100% 10%;
+  --danger: 2 83% 61%;
   --danger-foreground: 0 100% 96%;
 
-  --signal-up: 152 70% 44%;
-  --signal-down: 1 84% 62%;
-  --signal-neutral: 217 10% 66%;
+  --signal-up: 154 70% 44%;
+  --signal-down: 2 83% 62%;
+  --signal-neutral: 218 10% 64%;
 }
 
 * {
@@ -50,9 +50,14 @@ body {
 body {
   background: hsl(var(--bg-base));
   letter-spacing: 0.01em;
+  font-family: "IBM Plex Sans", sans-serif;
 }
 
 @layer components {
+  .app-canvas {
+    @apply mx-auto w-full max-w-[1760px];
+  }
+
   .table-shell {
     @apply overflow-x-auto rounded-lg border border-border bg-elevated/45;
   }
@@ -70,38 +75,34 @@ body {
   }
 
   .section-title {
-    @apply text-xs font-semibold uppercase tracking-[0.12em] text-foreground/85;
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground opacity-90;
   }
 
   .terminal-grid {
-    @apply grid gap-5 md:gap-6 xl:gap-7;
+    @apply grid gap-5 md:gap-6;
+  }
+
+  .surface-panel {
+    @apply rounded-xl border border-border bg-card;
   }
 
   .surface-card {
-    @apply transition-all duration-200 ease-out;
-  }
-
-  .surface-card:hover {
-    @apply -translate-y-0.5 border-foreground/20;
-  }
-
-  .surface-card:focus-within {
-    @apply -translate-y-0.5 border-primary/45 shadow-glow;
+    @apply transition-all duration-150 ease-out;
   }
 
   .stagger-in {
-    animation: panelIn 260ms ease-out both;
+    animation: panelIn 200ms ease-out both;
   }
 
-  .dense-kpi {
-    @apply rounded-lg border border-border bg-elevated/45 px-4 py-3;
+  .chip {
+    @apply inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium;
   }
 }
 
 @keyframes panelIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
