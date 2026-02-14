@@ -20,6 +20,9 @@ export default function CmePage() {
   const vm = toCmeViewModel(data);
 
   const cmeAge = ageMinutes(vm.snapshots?.[0]?.snapshot_time_bkk);
+  const cmeMarketOpen = vm.marketStatus?.cme_gold?.open;
+  const cmeMarketTone = cmeMarketOpen == null ? "neutral" : cmeMarketOpen ? "up" : "down";
+  const cmeMarketLabel = cmeMarketOpen == null ? "CME -" : `CME ${cmeMarketOpen ? "OPEN" : "CLOSED"}`;
 
   const intraday = vm.snapshots.find((s) => s.view_type === "intraday");
   const oi = vm.snapshots.find((s) => s.view_type === "oi");
@@ -37,7 +40,7 @@ export default function CmePage() {
   for (const d of sortedDeltas) if (!latestDeltaByView.has(d.view_type)) latestDeltaByView.set(d.view_type, d);
 
   return (
-    <AppShell status={{ cmeAgeMin: cmeAge }} marketStatus={vm.marketStatus}>
+    <AppShell status={{ cmeAgeMin: cmeAge }}>
       <PageHeader title="CME Options Monitor" subtitle="Snapshot tape, put/call structure, top active strikes, and change flow." />
 
       {loading ? <LoadingState title="Loading CME" /> : null}
@@ -48,7 +51,12 @@ export default function CmePage() {
         {structureSnapshots.map((snap) => {
           const sk = toneFromNumber((snap.call_total ?? 0) - (snap.put_total ?? 0));
           return (
-            <AnalyticsPanel key={snap.id} title={`${snap.view_type.toUpperCase()} Put/Call Structure`} subtitle={`${snap.series_name} · Exp ${snap.series_expiration_date || "-"} · DTE ${fmtNum(snap.series_dte, 2)}`}>
+            <AnalyticsPanel
+              key={snap.id}
+              title={`${snap.view_type.toUpperCase()} Put/Call Structure`}
+              subtitle={`${snap.series_name} · Exp ${snap.series_expiration_date || "-"} · DTE ${fmtNum(snap.series_dte, 2)}`}
+              rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+            >
               <div className="space-y-2">
                 <RatioBar leftValue={snap.put_total ?? 0} rightValue={snap.call_total ?? 0} leftLabel="Puts" rightLabel="Calls" tone={sk} />
                 <div className="flex items-center justify-between text-xs">
@@ -70,7 +78,11 @@ export default function CmePage() {
         ) : null}
       </PageSection>
 
-      <AnalyticsPanel title="CME Snapshot Tape" subtitle="Dense table with directional coloring for volatility and futures changes">
+      <AnalyticsPanel
+        title="CME Snapshot Tape"
+        subtitle="Dense table with directional coloring for volatility and futures changes"
+        rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+      >
         <DecisionTable>
           <THead>
             <TR>
@@ -106,7 +118,11 @@ export default function CmePage() {
       </AnalyticsPanel>
 
       <PageSection className="lg:grid-cols-2">
-        <AnalyticsPanel title="Top 3 Active Strikes" subtitle="Grouped by latest snapshots">
+        <AnalyticsPanel
+          title="Top 3 Active Strikes"
+          subtitle="Grouped by latest snapshots"
+          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+        >
           <div className="space-y-4">
             {vm.snapshots.slice(0, 2).map((snap) => {
               const rows = (topBySnapshot.get(snap.id) || []).sort((a, b) => a.rank - b.rank);
@@ -139,7 +155,11 @@ export default function CmePage() {
           </div>
         </AnalyticsPanel>
 
-        <AnalyticsPanel title="Top 3 Strike Changes" subtitle="Latest compare only, same series now vs previous">
+        <AnalyticsPanel
+          title="Top 3 Strike Changes"
+          subtitle="Latest compare only, same series now vs previous"
+          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+        >
           <div className="space-y-4">
             {[...latestDeltaByView.values()].map((delta) => {
               const rows = vm.topStrikeChanges.filter((row) => row.delta_id === delta.id).sort((a, b) => a.rank - b.rank);

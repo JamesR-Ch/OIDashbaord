@@ -29,7 +29,7 @@ export default function RelationsPage() {
   };
 
   return (
-    <AppShell status={{ relationAgeMin: relationAge }} marketStatus={vm.marketStatus}>
+    <AppShell status={{ relationAgeMin: relationAge }}>
       <PageHeader title="Relation Analytics" subtitle="Cross-asset 30m relation map with pair-level decision signals." />
 
       {loading ? <LoadingState title="Loading relations" /> : null}
@@ -42,7 +42,16 @@ export default function RelationsPage() {
           </AnalyticsPanel>
         ) : (
           <>
-          <AnalyticsPanel title="Relation Heatmap" subtitle={`Window ${fmtDateTime(vm.relation.window_start_bkk)} - ${fmtDateTime(vm.relation.window_end_bkk)}`}>
+          <AnalyticsPanel
+            title="Relation Heatmap"
+            subtitle={`Window ${fmtDateTime(vm.relation.window_start_bkk)} - ${fmtDateTime(vm.relation.window_end_bkk)}`}
+            rightSlot={
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Latest calc</p>
+                <p className="text-xs text-foreground/90">{fmtDateTime(vm.relation.anchor_time_bkk)}</p>
+              </div>
+            }
+          >
             <HeatMatrix symbols={symbols} valueAt={corr} />
 
             <div className="mt-4 flex flex-wrap gap-2">

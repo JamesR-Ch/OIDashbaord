@@ -1,7 +1,6 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import { DashboardMarketStatusVM } from "../../lib/view-models";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 
@@ -10,7 +9,6 @@ interface TopRailProps {
   nowBkk: string;
   relationAgeMin?: number | null;
   cmeAgeMin?: number | null;
-  marketStatus?: DashboardMarketStatusVM | null;
   isLoggedIn: boolean;
   onOpenNav: () => void;
 }
@@ -20,7 +18,6 @@ export function TopRail({
   nowBkk,
   relationAgeMin,
   cmeAgeMin,
-  marketStatus,
   isLoggedIn,
   onOpenNav
 }: TopRailProps) {
@@ -42,20 +39,6 @@ export function TopRail({
           <Badge variant="outline">CME age: {cmeAgeMin == null ? "-" : `${cmeAgeMin}m`}</Badge>
         </div>
       </div>
-
-      {marketStatus ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Badge variant={marketStatus.xauusd.open ? "success" : "warning"}>
-            XAUUSD {marketStatus.xauusd.open ? "OPEN" : "CLOSED"}
-          </Badge>
-          <Badge variant={marketStatus.thbusd.open ? "success" : "warning"}>
-            THBUSD {marketStatus.thbusd.open ? "OPEN" : "CLOSED"}
-          </Badge>
-          <Badge variant={marketStatus.cme_gold.open ? "success" : "warning"}>
-            CME {marketStatus.cme_gold.open ? "OPEN" : "CLOSED"}
-          </Badge>
-        </div>
-      ) : null}
     </header>
   );
 }

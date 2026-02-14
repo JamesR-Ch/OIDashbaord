@@ -1,14 +1,11 @@
 import { TerminalShell } from "./terminal-shell";
-import { DashboardMarketStatusVM } from "../../lib/view-models";
 
 export function AppShell({
   children,
-  status,
-  marketStatus
+  status
 }: {
   children: React.ReactNode;
   status?: { relationAgeMin?: number | null; cmeAgeMin?: number | null };
-  marketStatus?: DashboardMarketStatusVM | null;
 }) {
-  return <TerminalShell status={status} marketStatus={marketStatus}>{children}</TerminalShell>;
+  return <TerminalShell status={status}>{children}</TerminalShell>;
 }

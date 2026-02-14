@@ -50,9 +50,19 @@ export default function OverviewPage() {
   }
 
   const pricesBySymbol = new Map(vm.prices.map((p) => [p.symbol, p]));
+  const cmeMarketOpen = vm.marketStatus?.cme_gold?.open;
+  const cmeMarketTone = cmeMarketOpen == null ? "neutral" : cmeMarketOpen ? "up" : "down";
+  const cmeMarketLabel = cmeMarketOpen == null ? "CME -" : `CME ${cmeMarketOpen ? "OPEN" : "CLOSED"}`;
+
+  function marketForSymbol(symbol: string): { label: string; tone: "up" | "down" | "neutral" } {
+    if (symbol === "BTCUSD") return { label: "24/7 OPEN", tone: "up" };
+    const state = symbol === "XAUUSD" ? vm.marketStatus?.xauusd : vm.marketStatus?.thbusd;
+    if (!state) return { label: "Market -", tone: "neutral" };
+    return { label: state.open ? "Market OPEN" : "Market CLOSED", tone: state.open ? "up" : "down" };
+  }
 
   return (
-    <AppShell status={{ relationAgeMin: relationAge, cmeAgeMin: cmeAge }} marketStatus={vm.marketStatus}>
+    <AppShell status={{ relationAgeMin: relationAge, cmeAgeMin: cmeAge }}>
       <PageHeader title="Decision Dashboard" subtitle="Live cross-asset signal board with CME put/call structure and relation analytics." />
 
       {loading ? <LoadingState title="Loading dashboard" /> : null}
@@ -64,6 +74,7 @@ export default function OverviewPage() {
           const p = pricesBySymbol.get(symbol);
           const tone = toneFromNumber(p?.minute_pct_change ?? null);
           const digits = symbol === "THBUSD" ? 3 : 2;
+          const marketInfo = marketForSymbol(symbol);
           const sparklineValues = [
             typeof p?.previous_price === "number" ? p.previous_price : p?.price || 0,
             typeof p?.price === "number" ? p.price : p?.previous_price || 0
@@ -80,13 +91,19 @@ export default function OverviewPage() {
               staleLabel={`${ageMinutes(p?.event_time_bkk) ?? "-"}m ago`}
               tone={tone}
               sparklineValues={sparklineValues}
+              marketLabel={marketInfo.label}
+              marketTone={marketInfo.tone}
             />
           );
         })}
       </PageSection>
 
       <PageSection className="lg:grid-cols-[1.75fr_1fr]">
-        <AnalyticsPanel title="CME Gold Options" subtitle="Put/Call dynamics and structure signal by view">
+        <AnalyticsPanel
+          title="CME Gold Options"
+          subtitle="Put/Call dynamics and structure signal by view"
+          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+        >
           <div className="space-y-4">
             {structureSnapshots.map((snap) => {
               const tone = toneFromNumber((snap.call_total ?? 0) - (snap.put_total ?? 0));
@@ -118,7 +135,16 @@ export default function OverviewPage() {
           </div>
         </AnalyticsPanel>
 
-        <AnalyticsPanel title="Relation Matrix (30m)" subtitle="Correlation heatmap and pair-level outcomes">
+        <AnalyticsPanel
+          title="Relation Matrix (30m)"
+          subtitle="Correlation heatmap and pair-level outcomes"
+          rightSlot={
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Latest calc</p>
+              <p className="text-xs text-foreground/90">{fmtDateTime(vm.relation?.anchor_time_bkk)}</p>
+            </div>
+          }
+        >
           <div className="space-y-3">
             <HeatMatrix symbols={symbols} valueAt={corr} />
 
@@ -145,7 +171,11 @@ export default function OverviewPage() {
       </PageSection>
 
       <PageSection className="lg:grid-cols-[1fr_1.15fr]">
-        <AnalyticsPanel title="Top Active Strikes" subtitle="Top 3 by intraday and OI">
+        <AnalyticsPanel
+          title="Top Active Strikes"
+          subtitle="Top 3 by intraday and OI"
+          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+        >
           <div className="space-y-4">
             {vm.cmeSnapshots.slice(0, 2).map((snap) => {
               const rows = (topActivesBySnapshot.get(snap.id) || []).sort((a, b) => a.rank - b.rank);
@@ -178,7 +208,11 @@ export default function OverviewPage() {
           </div>
         </AnalyticsPanel>
 
-        <AnalyticsPanel title="Latest CME Strike Changes" subtitle="Current vs previous snapshot (same series)">
+        <AnalyticsPanel
+          title="Latest CME Strike Changes"
+          subtitle="Current vs previous snapshot (same series)"
+          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+        >
           <div className="space-y-4">
             {[...latestDeltaByView.values()].map((delta) => {
               const rows = vm.cmeTopStrikeChanges.filter((r) => r.delta_id === delta.id).sort((a, b) => a.rank - b.rank);

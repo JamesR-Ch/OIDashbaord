@@ -14,6 +14,8 @@ interface KpiCardProps {
   staleLabel: string;
   tone: StatusTone;
   sparklineValues: number[];
+  marketLabel?: string;
+  marketTone?: StatusTone;
 }
 
 export function KpiCard({
@@ -25,12 +27,17 @@ export function KpiCard({
   eventTimeLabel,
   staleLabel,
   tone,
-  sparklineValues
+  sparklineValues,
+  marketLabel,
+  marketTone = "neutral"
 }: KpiCardProps) {
   return (
     <Card className="surface-panel stagger-in">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs uppercase tracking-[0.12em] text-foreground/72">{symbol}</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-xs uppercase tracking-[0.12em] text-foreground/72">{symbol}</CardTitle>
+          {marketLabel ? <SignalChip label={marketLabel} tone={marketTone} /> : null}
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between gap-3">
