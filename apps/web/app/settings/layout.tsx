@@ -1,14 +1,14 @@
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAuthContextFromToken } from "../../lib/auth";
+import { AuthError, getAuthContextFromToken } from "../../lib/auth";
 
 export default async function SettingsLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("oid_access_token")?.value;
 
   if (!token) {
-    redirect("/login");
+    redirect("/login?next=/settings");
   }
 
   try {
@@ -16,8 +16,11 @@ export default async function SettingsLayout({ children }: { children: ReactNode
     if (auth.role !== "admin") {
       redirect("/overview");
     }
-  } catch {
-    redirect("/login");
+  } catch (error) {
+    if (error instanceof AuthError && error.status === 401) {
+      redirect("/login?next=/settings");
+    }
+    redirect("/overview");
   }
 
   return <>{children}</>;

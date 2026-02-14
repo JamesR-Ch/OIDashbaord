@@ -26,14 +26,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [nextPath, setNextPath] = useState("/settings");
+  const [nextPath, setNextPath] = useState("/overview");
   const syncingRef = useRef(false);
   const lastSyncedTokenRef = useRef<string | null>(null);
+  const lastAutoSyncAttemptAtRef = useRef(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const rawNextPath = params.get("next") || "/settings";
-    setNextPath(rawNextPath.startsWith("/") ? rawNextPath : "/settings");
+    const rawNextPath = params.get("next") || "/overview";
+    const safeNextPath =
+      rawNextPath.startsWith("/") &&
+      !rawNextPath.startsWith("/login") &&
+      !rawNextPath.startsWith("/api/")
+        ? rawNextPath
+        : "/overview";
+    setNextPath(safeNextPath);
   }, []);
 
   useEffect(() => {
@@ -41,6 +48,9 @@ export default function LoginPage() {
 
     async function syncThenRedirect(accessToken: string) {
       if (!accessToken || syncingRef.current || lastSyncedTokenRef.current === accessToken) return;
+      const now = Date.now();
+      if (now - lastAutoSyncAttemptAtRef.current < 5_000) return;
+      lastAutoSyncAttemptAtRef.current = now;
       if (hasRecentlySyncedToken(accessToken)) {
         lastSyncedTokenRef.current = accessToken;
         router.replace(nextPath as any);
