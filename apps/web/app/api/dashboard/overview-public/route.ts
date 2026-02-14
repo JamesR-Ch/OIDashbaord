@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "../../../../lib/db";
 import { DateTime } from "luxon";
+import { getDashboardMarketStatus } from "../../../../lib/market-status";
 
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
@@ -101,6 +102,7 @@ export async function GET(req: NextRequest) {
     cme_snapshots: cmeRes.data || [],
     top_actives: topActives,
     cme_deltas: cmeDeltaRes.data || [],
-    cme_top_strike_changes: topStrikeChanges
+    cme_top_strike_changes: topStrikeChanges,
+    market_status: getDashboardMarketStatus(anchor)
   });
 }

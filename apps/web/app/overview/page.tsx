@@ -52,7 +52,7 @@ export default function OverviewPage() {
   const pricesBySymbol = new Map(vm.prices.map((p) => [p.symbol, p]));
 
   return (
-    <AppShell status={{ relationAgeMin: relationAge, cmeAgeMin: cmeAge }}>
+    <AppShell status={{ relationAgeMin: relationAge, cmeAgeMin: cmeAge }} marketStatus={vm.marketStatus}>
       <PageHeader title="Decision Dashboard" subtitle="Live cross-asset signal board with CME put/call structure and relation analytics." />
 
       {loading ? <LoadingState title="Loading dashboard" /> : null}

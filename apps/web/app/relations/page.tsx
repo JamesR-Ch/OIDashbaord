@@ -29,7 +29,7 @@ export default function RelationsPage() {
   };
 
   return (
-    <AppShell status={{ relationAgeMin: relationAge }}>
+    <AppShell status={{ relationAgeMin: relationAge }} marketStatus={vm.marketStatus}>
       <PageHeader title="Relation Analytics" subtitle="Cross-asset 30m relation map with pair-level decision signals." />
 
       {loading ? <LoadingState title="Loading relations" /> : null}

@@ -3,6 +3,19 @@ export type HeatLevel = 0 | 1 | 2 | 3 | 4;
 export type SignalStrength = "weak" | "moderate" | "strong";
 export type StaleState = "fresh" | "stale" | "unknown";
 
+export interface MarketStateVM {
+  open: boolean;
+  reason: string;
+  session_time_utc: string | null;
+}
+
+export interface DashboardMarketStatusVM {
+  checked_at_utc: string | null;
+  xauusd: MarketStateVM;
+  thbusd: MarketStateVM;
+  cme_gold: MarketStateVM;
+}
+
 export interface OverviewPriceVM {
   symbol: string;
   price: number | null;
@@ -138,6 +151,7 @@ export interface OverviewViewModel {
   cmeDeltas: CmeDeltaVM[];
   cmeTopStrikeChanges: CmeTopStrikeChangeVM[];
   topActives: CmeTopActiveVM[];
+  marketStatus: DashboardMarketStatusVM | null;
 }
 
 export interface CmeViewModel {
@@ -145,10 +159,12 @@ export interface CmeViewModel {
   topActives: CmeTopActiveVM[];
   deltas: CmeDeltaVM[];
   topStrikeChanges: CmeTopStrikeChangeVM[];
+  marketStatus: DashboardMarketStatusVM | null;
 }
 
 export interface RelationsViewModel {
   relation: RelationSnapshotVM | null;
+  marketStatus: DashboardMarketStatusVM | null;
 }
 
 export function toneFromNumber(value: number | null | undefined): StatusTone {
@@ -188,7 +204,8 @@ export function toOverviewViewModel(raw: any): OverviewViewModel {
     cmeSnapshots: asArray<CmeSnapshotVM>(raw?.cme_snapshots),
     cmeDeltas: asArray<CmeDeltaVM>(raw?.cme_deltas),
     cmeTopStrikeChanges: asArray<CmeTopStrikeChangeVM>(raw?.cme_top_strike_changes),
-    topActives: asArray<CmeTopActiveVM>(raw?.top_actives)
+    topActives: asArray<CmeTopActiveVM>(raw?.top_actives),
+    marketStatus: (raw?.market_status as DashboardMarketStatusVM | null) || null
   };
 }
 
@@ -197,12 +214,14 @@ export function toCmeViewModel(raw: any): CmeViewModel {
     snapshots: asArray<CmeSnapshotVM>(raw?.cme_snapshots),
     topActives: asArray<CmeTopActiveVM>(raw?.top_actives),
     deltas: asArray<CmeDeltaVM>(raw?.cme_deltas),
-    topStrikeChanges: asArray<CmeTopStrikeChangeVM>(raw?.cme_top_strike_changes)
+    topStrikeChanges: asArray<CmeTopStrikeChangeVM>(raw?.cme_top_strike_changes),
+    marketStatus: (raw?.market_status as DashboardMarketStatusVM | null) || null
   };
 }
 
 export function toRelationsViewModel(raw: any): RelationsViewModel {
   return {
-    relation: (raw?.relation as RelationSnapshotVM | null) || null
+    relation: (raw?.relation as RelationSnapshotVM | null) || null,
+    marketStatus: (raw?.market_status as DashboardMarketStatusVM | null) || null
   };
 }

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearServerSession, signOut } from "../../lib/auth-client";
 import { getBrowserSupabaseClient } from "../../lib/supabase-browser";
+import { DashboardMarketStatusVM } from "../../lib/view-models";
 import { SidebarNav } from "./sidebar-nav";
 import { TopRail } from "./top-rail";
 
@@ -13,6 +14,7 @@ interface DashboardShellProps {
     relationAgeMin?: number | null;
     cmeAgeMin?: number | null;
   };
+  marketStatus?: DashboardMarketStatusVM | null;
 }
 
 function nowText() {
@@ -23,7 +25,7 @@ function nowText() {
   };
 }
 
-export function DashboardShell({ children, status }: DashboardShellProps) {
+export function DashboardShell({ children, status, marketStatus }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [now, setNow] = useState<{ utc: string; bkk: string } | null>(null);
@@ -94,6 +96,7 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
             nowBkk={now?.bkk || "BKK --:--:--"}
             relationAgeMin={status?.relationAgeMin}
             cmeAgeMin={status?.cmeAgeMin}
+            marketStatus={marketStatus}
             isLoggedIn={isLoggedIn}
             onOpenNav={() => setMobileNavOpen(true)}
           />

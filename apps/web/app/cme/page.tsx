@@ -37,7 +37,7 @@ export default function CmePage() {
   for (const d of sortedDeltas) if (!latestDeltaByView.has(d.view_type)) latestDeltaByView.set(d.view_type, d);
 
   return (
-    <AppShell status={{ cmeAgeMin: cmeAge }}>
+    <AppShell status={{ cmeAgeMin: cmeAge }} marketStatus={vm.marketStatus}>
       <PageHeader title="CME Options Monitor" subtitle="Snapshot tape, put/call structure, top active strikes, and change flow." />
 
       {loading ? <LoadingState title="Loading CME" /> : null}
