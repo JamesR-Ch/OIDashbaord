@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { BarChart3, CandlestickChart, Cpu, Gauge, Settings } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
@@ -33,7 +33,13 @@ function nowText() {
 
 export function DashboardShell({ children, status }: DashboardShellProps) {
   const pathname = usePathname();
-  const now = useMemo(() => nowText(), []);
+  const [now, setNow] = useState<{ utc: string; bkk: string } | null>(null);
+
+  useEffect(() => {
+    setNow(nowText());
+    const timer = setInterval(() => setNow(nowText()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <main className="min-h-screen bg-transparent text-foreground">
@@ -81,8 +87,8 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-success" />
               <span className="text-xs text-muted-foreground">Connected</span>
-              <Badge variant="outline" className="ml-2">{now.utc}</Badge>
-              <Badge variant="outline">{now.bkk}</Badge>
+              <Badge variant="outline" className="ml-2">{now?.utc || "UTC --:--:--"}</Badge>
+              <Badge variant="outline">{now?.bkk || "BKK --:--:--"}</Badge>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <Badge variant="outline">Relation age: {status?.relationAgeMin == null ? "-" : `${status.relationAgeMin}m`}</Badge>

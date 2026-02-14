@@ -82,7 +82,7 @@ function renderJobDetails(job: JobRunState): string {
 export default function SettingsPage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState("");
   const [latest, setLatest] = useState<LinkState | null>(null);
   const [recentJobs, setRecentJobs] = useState<JobRunState[]>([]);
   const [webhookTelemetry, setWebhookTelemetry] = useState<WebhookTelemetryState | null>(null);
@@ -130,6 +130,7 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
+    setDate(new Date().toISOString().slice(0, 10));
     loadCurrent();
     loadSystemStatus();
   }, []);
@@ -204,11 +205,27 @@ export default function SettingsPage() {
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="trade_date">Trade Date (BKK)</Label>
-              <Input id="trade_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                id="trade_date"
+                name="trade_date"
+                autoComplete="off"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="url">QuikStrike URL</Label>
-              <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} required placeholder="https://cmegroup-tools.quikstrike.net/..." />
+              <Input
+                id="url"
+                name="url"
+                autoComplete="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+                placeholder="https://cmegroup-tools.quikstrike.net/..."
+              />
             </div>
             <Button type="submit">Save Daily Link</Button>
             <p className="text-xs text-muted-foreground">{message}</p>
