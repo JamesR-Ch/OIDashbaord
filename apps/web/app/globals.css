@@ -49,6 +49,7 @@ body {
 
 body {
   background: hsl(var(--bg-base));
+  letter-spacing: 0.01em;
 }
 
 @layer components {
@@ -73,7 +74,38 @@ body {
   }
 
   .terminal-grid {
-    @apply grid gap-4;
+    @apply grid gap-5 md:gap-6;
+  }
+
+  .surface-card {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .surface-card:hover {
+    @apply -translate-y-0.5 border-foreground/20;
+  }
+
+  .surface-card:focus-within {
+    @apply -translate-y-0.5 border-primary/45 shadow-glow;
+  }
+
+  .stagger-in {
+    animation: panelIn 260ms ease-out both;
+  }
+
+  .dense-kpi {
+    @apply rounded-lg border border-border bg-elevated/45 px-3 py-2;
+  }
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
