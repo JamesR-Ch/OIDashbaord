@@ -17,10 +17,13 @@ export default async function SettingsLayout({ children }: { children: ReactNode
       redirect("/overview");
     }
   } catch (error) {
-    if (error instanceof AuthError && error.status === 401) {
+    if (error instanceof AuthError) {
+      if (error.status === 401) {
+        redirect("/login?next=/settings");
+      }
       redirect("/login?next=/settings");
     }
-    redirect("/overview");
+    redirect("/login?next=/settings");
   }
 
   return <>{children}</>;
