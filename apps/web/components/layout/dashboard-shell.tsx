@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { clearServerSession, signOut } from "../../lib/auth-client";
+import { clearServerSession, signOut, syncServerSession } from "../../lib/auth-client";
 import { getBrowserSupabaseClient } from "../../lib/supabase-browser";
 import { SidebarNav } from "./sidebar-nav";
 import { TopRail } from "./top-rail";
@@ -44,15 +44,22 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setIsLoggedIn(!!data.session);
+      if (data.session?.access_token) {
+        void syncServerSession(data.session.access_token);
+      }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
         setIsLoggedIn(false);
+        void clearServerSession();
         return;
       }
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         setIsLoggedIn(!!session);
+        if (session?.access_token) {
+          void syncServerSession(session.access_token);
+        }
       }
     });
 
