@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { clearServerSession, signOut, syncServerSession } from "../../lib/auth-client";
 import { getBrowserSupabaseClient } from "../../lib/supabase-browser";
 import { SidebarNav } from "./sidebar-nav";
@@ -30,46 +30,6 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const lastDebugAtRef = useRef(0);
-
-  async function runAuthDebug(tag: string) {
-    if (typeof window === "undefined") return;
-    const nowMs = Date.now();
-    if (nowMs - lastDebugAtRef.current < 1000) return;
-    lastDebugAtRef.current = nowMs;
-
-    try {
-      const supabase = getBrowserSupabaseClient();
-      const { data } = await supabase.auth.getSession();
-      const accessToken = data.session?.access_token || null;
-      const query = new URLSearchParams(window.location.search);
-      const reason = query.get("auth_debug_reason");
-      const debugEnabled = query.get("debugAuth") === "1" || window.localStorage.getItem("oid_auth_debug") === "1";
-
-      if (!debugEnabled && !reason) return;
-
-      const res = await fetch("/api/auth/debug", {
-        cache: "no-store",
-        headers: accessToken
-          ? { Authorization: `Bearer ${accessToken}` }
-          : undefined
-      });
-      const payload = await res.json().catch(() => ({}));
-
-      console.groupCollapsed(`[OID auth-debug] ${tag}`);
-      console.log("url", window.location.href);
-      console.log("pathname", pathname);
-      console.log("auth_debug_reason", reason || null);
-      console.log("browser_session", {
-        has_session: !!data.session,
-        token_masked: accessToken ? `${accessToken.slice(0, 8)}...${accessToken.slice(-6)}` : null
-      });
-      console.log("server_auth_debug", payload);
-      console.groupEnd();
-    } catch (error) {
-      console.warn("[OID auth-debug] failed", error);
-    }
-  }
 
   useEffect(() => {
     setNow(nowText());
@@ -111,23 +71,6 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
 
   useEffect(() => {
     setMobileNavOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const w = window as any;
-    w.oidAuthDebug = () => runAuthDebug("manual");
-    w.oidAuthDebugOn = () => window.localStorage.setItem("oid_auth_debug", "1");
-    w.oidAuthDebugOff = () => window.localStorage.removeItem("oid_auth_debug");
-    return () => {
-      delete w.oidAuthDebug;
-      delete w.oidAuthDebugOn;
-      delete w.oidAuthDebugOff;
-    };
-  }, [pathname]);
-
-  useEffect(() => {
-    void runAuthDebug(`route:${pathname}`);
   }, [pathname]);
 
   async function onLogout() {
