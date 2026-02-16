@@ -5,6 +5,15 @@ import { getAdminDb } from "../../../../lib/db";
 import { config } from "../../../../lib/config";
 import { DateTime } from "luxon";
 
+type AlertSeverity = "critical" | "warning" | "info";
+type AlertEvent = {
+  key: string;
+  severity: AlertSeverity;
+  title: string;
+  detail: string;
+  recommendation: string;
+};
+
 export async function GET(req: NextRequest) {
   try {
     await assertAdmin(req);
@@ -177,6 +186,106 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const webhookTotal = telemetryTableMissing ? 0 : totalLogCount.count || 0;
+  const webhook4xx = telemetryTableMissing ? 0 : clientErrLogCount.count || 0;
+  const webhook5xx = telemetryTableMissing ? 0 : serverErrLogCount.count || 0;
+  const webhook4xxRatePct =
+    webhookTotal > 0 ? Number(((webhook4xx / webhookTotal) * 100).toFixed(2)) : 0;
+
+  const alertEvents: AlertEvent[] = [];
+  const pushAlert = (event: AlertEvent) => alertEvents.push(event);
+
+  if (alerts.relation_last_status === "failed") {
+    pushAlert({
+      key: "relation_failed",
+      severity: "critical",
+      title: "Relation job failed",
+      detail: `Latest relation_30m status is failed (age=${alerts.relation_age_min ?? "-"}m).`,
+      recommendation: "Check worker logs, rerun relation job once, and verify Supabase connectivity."
+    });
+  }
+
+  if (alerts.cme_last_status === "failed") {
+    pushAlert({
+      key: "cme_failed",
+      severity: "critical",
+      title: "CME job failed",
+      detail: `Latest cme_30m status is failed (age=${alerts.cme_age_min ?? "-"}m).`,
+      recommendation: "Check worker logs and Playwright runtime dependencies, then run CME once."
+    });
+  }
+
+  if (alerts.relation_stale) {
+    pushAlert({
+      key: "relation_stale",
+      severity: "warning",
+      title: "Relation snapshot is stale",
+      detail: `Latest relation snapshot age is ${alerts.relation_age_min ?? "-"} minutes.`,
+      recommendation: "Verify scheduler activity and market-session gating for relation jobs."
+    });
+  }
+
+  if (alerts.cme_stale) {
+    pushAlert({
+      key: "cme_stale",
+      severity: "warning",
+      title: "CME snapshot is stale",
+      detail: `Latest CME snapshot age is ${alerts.cme_age_min ?? "-"} minutes.`,
+      recommendation: "Confirm daily CME link is active and worker cme_30m is running."
+    });
+  }
+
+  if (workerHealth && !workerHealth.ok) {
+    pushAlert({
+      key: "worker_health_unavailable",
+      severity: "critical",
+      title: "Worker health check failed",
+      detail: workerHealth.error || "Unable to fetch worker health details.",
+      recommendation: "Check worker deployment status and WORKER_CONTROL_URL/WORKER_CONTROL_SECRET."
+    });
+  }
+
+  if (!telemetryTableMissing) {
+    if (webhook5xx >= config.systemAlertWebhook5xxCount) {
+      pushAlert({
+        key: "webhook_5xx",
+        severity: "critical",
+        title: "Webhook server errors detected",
+        detail: `Detected ${webhook5xx} webhook 5xx responses in the last hour.`,
+        recommendation: "Inspect web logs and upstream worker connectivity immediately."
+      });
+    }
+
+    if (
+      webhookTotal >= config.systemAlertWebhookMinSamples &&
+      webhook4xxRatePct >= config.systemAlertWebhook4xxRatePct
+    ) {
+      pushAlert({
+        key: "webhook_4xx_rate_high",
+        severity: "warning",
+        title: "Webhook client error rate is high",
+        detail: `4xx rate is ${webhook4xxRatePct}% (${webhook4xx}/${webhookTotal}) in the last hour.`,
+        recommendation: "Validate TradingView payload schema, secret, and timestamp skew settings."
+      });
+    }
+  }
+
+  if (alertEvents.length === 0) {
+    pushAlert({
+      key: "system_nominal",
+      severity: "info",
+      title: "System nominal",
+      detail: "No critical or warning alerts currently detected.",
+      recommendation: "Continue routine monitoring."
+    });
+  }
+
+  const alertSummary: "critical" | "warning" | "ok" = alertEvents.some((x) => x.severity === "critical")
+    ? "critical"
+    : alertEvents.some((x) => x.severity === "warning")
+      ? "warning"
+      : "ok";
+
   return NextResponse.json({
     retention_days_structured: 45,
     retention_days_artifacts: 1,
@@ -194,6 +303,8 @@ export async function GET(req: NextRequest) {
           recent: recentWebhookLogs.data || []
         },
     worker_health: workerHealth,
-    alerts
+    alerts,
+    alert_summary: alertSummary,
+    alert_events: alertEvents
   });
 }

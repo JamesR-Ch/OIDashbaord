@@ -70,6 +70,14 @@ interface AlertsState {
   cme_skip_reason?: string | null;
 }
 
+interface AlertEventState {
+  key: string;
+  severity: "critical" | "warning" | "info";
+  title: string;
+  detail: string;
+  recommendation: string;
+}
+
 type AccessState = "ok" | "forbidden" | "expired" | "transient_error";
 
 function renderJobDetails(job: JobRunState): string {
@@ -90,6 +98,8 @@ export default function SettingsPage() {
   const [webhookTelemetry, setWebhookTelemetry] = useState<WebhookTelemetryState | null>(null);
   const [workerHealth, setWorkerHealth] = useState<WorkerHealthState | null>(null);
   const [alerts, setAlerts] = useState<AlertsState | null>(null);
+  const [alertSummary, setAlertSummary] = useState<"critical" | "warning" | "ok" | null>(null);
+  const [alertEvents, setAlertEvents] = useState<AlertEventState[]>([]);
   const [message, setMessage] = useState("");
   const [runNowMessage, setRunNowMessage] = useState("");
   const [runningJob, setRunningJob] = useState<"relation" | "cme" | "both" | "">("");
@@ -165,6 +175,8 @@ export default function SettingsPage() {
         setWebhookTelemetry(json.webhook_telemetry || null);
         setWorkerHealth(json.worker_health || null);
         setAlerts(json.alerts || null);
+        setAlertSummary(json.alert_summary || null);
+        setAlertEvents(Array.isArray(json.alert_events) ? json.alert_events : []);
       } catch (error: any) {
         if (error?.name === "AbortError") return;
         setAccessState("transient_error");
@@ -365,6 +377,39 @@ export default function SettingsPage() {
           )}
         </AnalyticsPanel>
       </PageSection>
+
+      <AnalyticsPanel
+        title="System Alert Events"
+        subtitle="Actionable observability feed (critical, warning, info)"
+        rightSlot={
+          alertSummary ? (
+            <SignalChip
+              label={alertSummary === "critical" ? "CRITICAL" : alertSummary === "warning" ? "WARNING" : "OK"}
+              tone={alertSummary === "critical" ? "down" : alertSummary === "warning" ? "neutral" : "up"}
+            />
+          ) : null
+        }
+      >
+        {alertEvents.length === 0 ? (
+          <StateBlock title="No alert events" detail="System has not generated alert events yet." />
+        ) : (
+          <div className="space-y-2">
+            {alertEvents.map((event) => (
+              <div key={event.key} className="rounded-lg border border-border bg-elevated/45 p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">{event.title}</p>
+                  <SignalChip
+                    label={event.severity.toUpperCase()}
+                    tone={event.severity === "critical" ? "down" : event.severity === "warning" ? "neutral" : "up"}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{event.detail}</p>
+                <p className="mt-1 text-xs">Action: {event.recommendation}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </AnalyticsPanel>
 
       <AnalyticsPanel title="Webhook Telemetry" subtitle="TradingView traffic and recent request status">
         {!webhookTelemetry ? (

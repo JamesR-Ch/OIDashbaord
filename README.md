@@ -162,3 +162,7 @@ If Next.js throws errors like `Cannot find module './207.js'` from `.next/server
 
 - Run backend math/ranking tests:
   - `npm run test`
+
+## Incident Runbook
+
+- See `docs/incident-runbook.md` for operational response steps and severity handling.

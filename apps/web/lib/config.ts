@@ -24,6 +24,9 @@ export const config = {
   adminApiRateLimitPerMinute: Number(process.env.ADMIN_API_RATE_LIMIT_PER_MINUTE || "60"),
   authLoginMaxFailedAttempts: Number(process.env.AUTH_LOGIN_MAX_FAILED_ATTEMPTS || "5"),
   authLoginLockMinutes: Number(process.env.AUTH_LOGIN_LOCK_MINUTES || "15"),
+  systemAlertWebhook4xxRatePct: Number(process.env.SYSTEM_ALERT_WEBHOOK_4XX_RATE_PCT || "20"),
+  systemAlertWebhookMinSamples: Number(process.env.SYSTEM_ALERT_WEBHOOK_MIN_SAMPLES || "20"),
+  systemAlertWebhook5xxCount: Number(process.env.SYSTEM_ALERT_WEBHOOK_5XX_COUNT || "1"),
   appName: process.env.NEXT_PUBLIC_APP_NAME || "OIDashboard"
 };
 
