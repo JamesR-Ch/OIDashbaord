@@ -23,6 +23,7 @@ Set in both Railway services where relevant:
 - `RUN_NOW_COOLDOWN_SECONDS` (web only)
 - `CME_LINK_UPDATE_COOLDOWN_SECONDS` (web only)
 - `AUTH_SESSION_RATE_LIMIT_PER_MINUTE` (web only)
+- `AUTH_LOGIN_RATE_LIMIT_PER_MINUTE` (web only)
 - `ADMIN_API_RATE_LIMIT_PER_MINUTE` (web only)
 - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS` (web only; default `5`)
 - `AUTH_LOGIN_LOCK_MINUTES` (web only; default `15`)
@@ -114,6 +115,10 @@ order by status_code;
   - `auth_login_lockouts`: 30 days (configurable)
   - `cme_series_links`: 90 days (configurable)
 - Webhook replay and rate-limit protections depend on migrations `004` and `005`.
+- Login abuse protections are controlled by:
+  - `AUTH_LOGIN_RATE_LIMIT_PER_MINUTE`
+  - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS`
+  - `AUTH_LOGIN_LOCK_MINUTES`
 - Worker health endpoints:
   - `/health`
   - `/health/details` (includes running jobs + latest run summary)

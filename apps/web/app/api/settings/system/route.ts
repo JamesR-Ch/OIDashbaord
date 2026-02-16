@@ -35,7 +35,10 @@ export async function GET(req: NextRequest) {
     clientErrLogCount,
     serverErrLogCount,
     recentWebhookLogs,
-    webhookNotes
+    webhookNotes,
+    activeLockoutsCount,
+    failedAttempts24hCount,
+    recentLockouts
   ] = await Promise.all([
     adminDb
       .from("job_runs")
@@ -84,7 +87,22 @@ export async function GET(req: NextRequest) {
       .select("note")
       .eq("source", "tradingview")
       .gte("received_at", oneHourAgoIso)
-      .not("note", "is", null)
+      .not("note", "is", null),
+    adminDb
+      .from("auth_login_lockouts")
+      .select("email", { count: "exact", head: true })
+      .not("locked_until", "is", null)
+      .gt("locked_until", DateTime.utc().toISO()),
+    adminDb
+      .from("auth_login_lockouts")
+      .select("email", { count: "exact", head: true })
+      .not("last_failed_at", "is", null)
+      .gte("last_failed_at", DateTime.utc().minus({ hours: 24 }).toISO()),
+    adminDb
+      .from("auth_login_lockouts")
+      .select("email,failed_attempts,locked_until,last_failed_at,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(10)
   ]);
 
   const telemetryTableMissing = [
@@ -94,6 +112,12 @@ export async function GET(req: NextRequest) {
     serverErrLogCount.error,
     recentWebhookLogs.error,
     webhookNotes.error
+  ].some((err) => err?.code === "PGRST205");
+
+  const authLockTableMissing = [
+    activeLockoutsCount.error,
+    failedAttempts24hCount.error,
+    recentLockouts.error
   ].some((err) => err?.code === "PGRST205");
 
   const noteCounts = new Map<string, number>();
@@ -245,6 +269,29 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  const activeLockouts = authLockTableMissing ? 0 : activeLockoutsCount.count || 0;
+  const failedAttempts24h = authLockTableMissing ? 0 : failedAttempts24hCount.count || 0;
+
+  if (!authLockTableMissing && activeLockouts >= 3) {
+    pushAlert({
+      key: "auth_lockouts_high",
+      severity: "warning",
+      title: "Multiple active login lockouts",
+      detail: `Detected ${activeLockouts} active lockouts in auth_login_lockouts.`,
+      recommendation: "Review source IP patterns and tighten login controls if repeated."
+    });
+  }
+
+  if (!authLockTableMissing && failedAttempts24h >= 25) {
+    pushAlert({
+      key: "auth_failed_attempts_high",
+      severity: "warning",
+      title: "High failed login volume (24h)",
+      detail: `Detected ${failedAttempts24h} failed login records in the last 24 hours.`,
+      recommendation: "Monitor for abuse and consider reducing AUTH_LOGIN_RATE_LIMIT_PER_MINUTE."
+    });
+  }
+
   if (!telemetryTableMissing) {
     if (webhook5xx >= config.systemAlertWebhook5xxCount) {
       pushAlert({
@@ -301,6 +348,13 @@ export async function GET(req: NextRequest) {
           server_5xx: serverErrLogCount.count || 0,
           top_notes: topNotes,
           recent: recentWebhookLogs.data || []
+        },
+    auth_security: authLockTableMissing
+      ? null
+      : {
+          active_lockouts: activeLockouts,
+          failed_attempts_24h: failedAttempts24h,
+          recent_lockouts: recentLockouts.data || []
         },
     worker_health: workerHealth,
     alerts,

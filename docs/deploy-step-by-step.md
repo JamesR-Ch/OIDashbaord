@@ -93,6 +93,7 @@ Optional tuning (safe to skip; defaults exist in code):
 - `RUN_NOW_COOLDOWN_SECONDS=20`
 - `CME_LINK_UPDATE_COOLDOWN_SECONDS=20`
 - `AUTH_SESSION_RATE_LIMIT_PER_MINUTE=30`
+- `AUTH_LOGIN_RATE_LIMIT_PER_MINUTE=15`
 - `ADMIN_API_RATE_LIMIT_PER_MINUTE=60`
 - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS=5`
 - `AUTH_LOGIN_LOCK_MINUTES=15`
@@ -183,6 +184,8 @@ Optional tuning (safe to skip; defaults exist in code):
 3. Verify in `/settings` webhook telemetry:
    - 2xx increases
    - 4xx near zero
+4. Verify in `/settings` login abuse monitoring:
+   - `Active lockouts` and `Failed attempts (24h)` reflect expected auth behavior.
 
 ## 11. Daily Operations
 
@@ -224,6 +227,7 @@ Notes:
 - Background tabs will poll slower automatically (lower API + DB load).
 - Fetch errors/offline states back off automatically (prevents request storms).
 - Keep `WEBHOOK_RATE_LIMIT_PER_MINUTE` and `AUTH_SESSION_RATE_LIMIT_PER_MINUTE` enabled; tune upward only when needed.
+- Keep `AUTH_LOGIN_RATE_LIMIT_PER_MINUTE` conservative (default `15`) and tighten if repeated abuse appears in settings telemetry.
 
 Worker service:
 - Keep `WORKER_CRON_RELATION` and `WORKER_CRON_CME` at `*/30 * * * *` unless business needs tighter cadence.

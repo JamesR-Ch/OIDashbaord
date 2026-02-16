@@ -78,6 +78,18 @@ interface AlertEventState {
   recommendation: string;
 }
 
+interface AuthSecurityState {
+  active_lockouts: number;
+  failed_attempts_24h: number;
+  recent_lockouts: Array<{
+    email: string;
+    failed_attempts: number;
+    locked_until: string | null;
+    last_failed_at: string | null;
+    updated_at: string;
+  }>;
+}
+
 type AccessState = "ok" | "forbidden" | "expired" | "transient_error";
 
 function renderJobDetails(job: JobRunState): string {
@@ -100,6 +112,7 @@ export default function SettingsPage() {
   const [alerts, setAlerts] = useState<AlertsState | null>(null);
   const [alertSummary, setAlertSummary] = useState<"critical" | "warning" | "ok" | null>(null);
   const [alertEvents, setAlertEvents] = useState<AlertEventState[]>([]);
+  const [authSecurity, setAuthSecurity] = useState<AuthSecurityState | null>(null);
   const [message, setMessage] = useState("");
   const [runNowMessage, setRunNowMessage] = useState("");
   const [runningJob, setRunningJob] = useState<"relation" | "cme" | "both" | "">("");
@@ -177,6 +190,7 @@ export default function SettingsPage() {
         setAlerts(json.alerts || null);
         setAlertSummary(json.alert_summary || null);
         setAlertEvents(Array.isArray(json.alert_events) ? json.alert_events : []);
+        setAuthSecurity(json.auth_security || null);
       } catch (error: any) {
         if (error?.name === "AbortError") return;
         setAccessState("transient_error");
@@ -377,6 +391,35 @@ export default function SettingsPage() {
           )}
         </AnalyticsPanel>
       </PageSection>
+
+      <AnalyticsPanel title="Login Abuse Monitoring" subtitle="Auth lockouts and failed login activity (24h)">
+        {!authSecurity ? (
+          <StateBlock title="Auth security telemetry unavailable" detail="auth_login_lockouts table not available or no data yet." />
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-3">
+              <div className="rounded-md border border-border bg-elevated/45 p-2">Active lockouts: {authSecurity.active_lockouts}</div>
+              <div className="rounded-md border border-border bg-elevated/45 p-2">Failed attempts (24h): {authSecurity.failed_attempts_24h}</div>
+              <div className="rounded-md border border-border bg-elevated/45 p-2">Recent rows: {authSecurity.recent_lockouts.length}</div>
+            </div>
+            <DecisionTable compact>
+              <THead><TR><TH>Email</TH><TH>Attempts</TH><TH>Locked Until</TH><TH>Last Failed</TH></TR></THead>
+              <TBody>
+                {authSecurity.recent_lockouts.length === 0 ? (
+                  <TR><TD colSpan={4}>No recent lockout rows.</TD></TR>
+                ) : authSecurity.recent_lockouts.map((row, idx) => (
+                  <TR key={`${row.email}-${row.updated_at}-${idx}`}>
+                    <TD>{row.email}</TD>
+                    <TD>{row.failed_attempts}</TD>
+                    <TD>{fmtDateTime(row.locked_until)}</TD>
+                    <TD>{fmtDateTime(row.last_failed_at)}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </DecisionTable>
+          </div>
+        )}
+      </AnalyticsPanel>
 
       <AnalyticsPanel
         title="System Alert Events"

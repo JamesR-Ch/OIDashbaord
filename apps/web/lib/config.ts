@@ -21,6 +21,7 @@ export const config = {
   runNowCooldownSeconds: Number(process.env.RUN_NOW_COOLDOWN_SECONDS || "20"),
   cmeLinkUpdateCooldownSeconds: Number(process.env.CME_LINK_UPDATE_COOLDOWN_SECONDS || "20"),
   authSessionRateLimitPerMinute: Number(process.env.AUTH_SESSION_RATE_LIMIT_PER_MINUTE || "30"),
+  authLoginRateLimitPerMinute: Number(process.env.AUTH_LOGIN_RATE_LIMIT_PER_MINUTE || "15"),
   adminApiRateLimitPerMinute: Number(process.env.ADMIN_API_RATE_LIMIT_PER_MINUTE || "60"),
   authLoginMaxFailedAttempts: Number(process.env.AUTH_LOGIN_MAX_FAILED_ATTEMPTS || "5"),
   authLoginLockMinutes: Number(process.env.AUTH_LOGIN_LOCK_MINUTES || "15"),

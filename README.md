@@ -73,8 +73,13 @@ Run in order:
   - worker health panel
   - stale-alert panel (relation/CME age + last status)
 - Password login has lockout protection:
+  - `AUTH_LOGIN_RATE_LIMIT_PER_MINUTE` (default 15)
   - `AUTH_LOGIN_MAX_FAILED_ATTEMPTS` (default 5)
   - `AUTH_LOGIN_LOCK_MINUTES` (default 15)
+- Settings page includes login abuse telemetry:
+  - active lockouts
+  - failed attempts (24h)
+  - recent lockout rows
 - TradingView direct webhook mode (recommended for current setup):
   - `WEBHOOK_REQUIRE_SIGNATURE=false`
   - `WEBHOOK_ALLOW_BODY_SECRET_FALLBACK=true`

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const clientIp = getClientIp(req);
   const rate = checkRateLimit(
     `password_signin:${clientIp}`,
-    config.authSessionRateLimitPerMinute,
+    config.authLoginRateLimitPerMinute,
     60_000
   );
   if (!rate.allowed) {
