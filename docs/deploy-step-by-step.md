@@ -210,3 +210,27 @@ Optional tuning (safe to skip; defaults exist in code):
 4. Test command passes locally:
    - `npm run test`
 5. Worker and web both healthy after restart.
+
+## 14. Performance + Cost Controls (Recommended)
+
+Use these to reduce resource usage while keeping UX responsive:
+
+Web service:
+- `NEXT_PUBLIC_DASHBOARD_POLL_MS=15000`
+- `NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS=60000`
+- `NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS=120000`
+
+Notes:
+- Background tabs will poll slower automatically (lower API + DB load).
+- Fetch errors/offline states back off automatically (prevents request storms).
+- Keep `WEBHOOK_RATE_LIMIT_PER_MINUTE` and `AUTH_SESSION_RATE_LIMIT_PER_MINUTE` enabled; tune upward only when needed.
+
+Worker service:
+- Keep `WORKER_CRON_RELATION` and `WORKER_CRON_CME` at `*/30 * * * *` unless business needs tighter cadence.
+- Keep `CME_EXTRACT_MAX_ATTEMPTS=3`; increasing retries raises CPU/runtime cost.
+- Keep retention jobs enabled (prevents table growth and query cost drift).
+
+Operational tips:
+1. Scale service size only after checking real CPU/memory metrics for 3-7 days.
+2. Avoid running `Run Both Now` repeatedly during stable periods.
+3. If cost spikes, first increase hidden poll interval, then review webhook noise/invalid payload rates.

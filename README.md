@@ -96,6 +96,10 @@ Core routes:
 
 Data refresh:
 - Frontend polls `/api/dashboard/overview-public` every 15s for V1
+- Polling is adaptive for cost/performance:
+  - visible tab: `NEXT_PUBLIC_DASHBOARD_POLL_MS` (default `15000`)
+  - background tab: `NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS` (default `60000`)
+  - fetch errors/offline use backoff up to `NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS` (default `120000`)
 - Realtime subscriptions are intentionally deferred to later phase
 
 ## TradingView Live Checklist

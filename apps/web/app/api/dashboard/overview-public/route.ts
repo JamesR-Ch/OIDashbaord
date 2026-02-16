@@ -3,6 +3,8 @@ import { getAdminDb } from "../../../../lib/db";
 import { DateTime } from "luxon";
 import { getDashboardMarketStatus } from "../../../../lib/market-status";
 
+const PRICE_LOOKBACK_ROWS = 36;
+
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
   const at = req.nextUrl.searchParams.get("at");
@@ -16,7 +18,7 @@ export async function GET(req: NextRequest) {
       .select("symbol,price,event_time_utc,event_time_bkk")
       .lte("event_time_utc", anchor.toISO())
       .order("event_time_utc", { ascending: false })
-      .limit(120),
+      .limit(PRICE_LOOKBACK_ROWS),
     adminDb
       .from("relation_snapshots_30m")
       .select("*")
