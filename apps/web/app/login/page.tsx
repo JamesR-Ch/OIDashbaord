@@ -26,7 +26,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [nextPath, setNextPath] = useState("/overview");
+  const [nextPath, setNextPath] = useState<string | null>(null);
   const syncingRef = useRef(false);
   const lastSyncedTokenRef = useRef<string | null>(null);
   const lastAutoSyncAttemptAtRef = useRef(0);
@@ -45,6 +45,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const supabase = getBrowserSupabaseClient();
+    if (!nextPath) return;
 
     async function syncThenRedirect(accessToken: string) {
       if (!accessToken || syncingRef.current || lastSyncedTokenRef.current === accessToken) return;
@@ -121,7 +122,7 @@ export default function LoginPage() {
       }
       noteSessionSyncSuccess(data.session.access_token);
       lastSyncedTokenRef.current = data.session.access_token;
-      router.replace(nextPath as any);
+      router.replace((nextPath || "/overview") as any);
       return;
     }
 
