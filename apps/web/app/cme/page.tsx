@@ -11,7 +11,7 @@ import { PageSection } from "../../components/layout/page-section";
 import { StateBlock } from "../../components/dashboard/state-block";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtNum } from "../../lib/format";
-import { toCmeViewModel, toneFromNumber } from "../../lib/view-models";
+import { classifyPcr, toCmeViewModel, toneFromNumber } from "../../lib/view-models";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +49,7 @@ export default function CmePage() {
       <div className="space-y-6">
       <PageSection className="lg:grid-cols-2">
         {structureSnapshots.map((snap) => {
-          const sk = toneFromNumber((snap.call_total ?? 0) - (snap.put_total ?? 0));
+          const pcrSignal = classifyPcr(snap.put_total, snap.call_total);
           return (
             <AnalyticsPanel
               key={snap.id}
@@ -58,7 +58,17 @@ export default function CmePage() {
               rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
             >
               <div className="space-y-2">
-                <RatioBar leftValue={snap.put_total ?? 0} rightValue={snap.call_total ?? 0} leftLabel="Puts" rightLabel="Calls" tone={sk} />
+                <div className="flex justify-end">
+                  <SignalChip label={pcrSignal.label} tone={pcrSignal.tone} />
+                </div>
+                <RatioBar
+                  leftValue={snap.put_total ?? 0}
+                  rightValue={snap.call_total ?? 0}
+                  leftLabel="Puts"
+                  rightLabel="Calls"
+                  tone={pcrSignal.tone}
+                  pcr={pcrSignal.pcr}
+                />
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Snapshot</span>
                   <span>{fmtDateTime(snap.snapshot_time_bkk)}</span>

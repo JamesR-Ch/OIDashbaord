@@ -52,12 +52,16 @@ Run in order:
 - Relation analytics run only during FX trading session hours.
 - Symbol market-hour assumptions for relation engine:
   - `BTCUSD`: crypto 24/7
-  - `XAUUSD`, `THBUSD`: FX session (Sun 17:00 ET to Fri 17:00 ET, DST-aware via `America/New_York`)
+  - `XAUUSD`: IFC metals session (`Europe/Berlin`):
+    - opens Sunday 23:00
+    - Mon-Thu daily break 22:00-23:00
+    - closes Friday 22:00
+  - `THBUSD`: FX session (Sun 17:00 ET to Fri 17:00 ET, DST-aware via `America/New_York`)
 - You can override per symbol using env:
   - `SYMBOL_SESSION_MODE_XAUUSD`
   - `SYMBOL_SESSION_MODE_THBUSD`
   - `SYMBOL_SESSION_MODE_BTCUSD`
-  - Values: `auto`, `always_open`, `always_closed`, `fx_24_5`
+  - Values: `auto`, `always_open`, `always_closed`, `fx_24_5`, `ifc_metal`
 - Data retention defaults: 45 days (structured), 1 day (artifacts).
 - Additional retention defaults:
   - `job_runs`: 30 days

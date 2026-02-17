@@ -6,7 +6,7 @@ import type { SymbolCode } from "@oid/shared";
 dotenvConfig({ path: path.resolve(process.cwd(), "../../.env") });
 dotenvConfig();
 
-type SymbolSessionMode = "auto" | "always_open" | "always_closed" | "fx_24_5";
+type SymbolSessionMode = "auto" | "always_open" | "always_closed" | "fx_24_5" | "ifc_metal";
 const SYMBOL_SESSION_MODES: Record<SymbolCode, SymbolSessionMode> = {
   XAUUSD: "auto",
   THBUSD: "auto",
@@ -16,7 +16,13 @@ const SYMBOL_SESSION_MODES: Record<SymbolCode, SymbolSessionMode> = {
 function parseSessionMode(value: string | undefined, fallback: SymbolSessionMode): SymbolSessionMode {
   if (!value) return fallback;
   const normalized = value.trim().toLowerCase();
-  if (normalized === "auto" || normalized === "always_open" || normalized === "always_closed" || normalized === "fx_24_5") {
+  if (
+    normalized === "auto" ||
+    normalized === "always_open" ||
+    normalized === "always_closed" ||
+    normalized === "fx_24_5" ||
+    normalized === "ifc_metal"
+  ) {
     return normalized;
   }
   return fallback;

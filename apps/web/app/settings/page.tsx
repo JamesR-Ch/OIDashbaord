@@ -92,6 +92,15 @@ interface AuthSecurityState {
 
 type AccessState = "ok" | "forbidden" | "expired" | "transient_error";
 
+function getTodayBkkDate(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
 function renderJobDetails(job: JobRunState): string {
   const durationMs = typeof job.metadata?.duration_ms === "number" ? job.metadata.duration_ms : null;
   if (job.error_message) return job.error_message;
@@ -205,7 +214,7 @@ export default function SettingsPage() {
   }, [handleAccessStatus]);
 
   useEffect(() => {
-    setDate(new Date().toISOString().slice(0, 10));
+    setDate(getTodayBkkDate());
     const controller = new AbortController();
     void Promise.all([loadCurrent(controller.signal), loadSystemStatus(controller.signal)]);
     return () => controller.abort();

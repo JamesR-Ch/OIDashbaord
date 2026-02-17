@@ -13,7 +13,13 @@ import { ErrorState, LoadingState } from "../../components/dashboard/states";
 import { PageSection } from "../../components/layout/page-section";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtDateTimeShort, fmtNum } from "../../lib/format";
-import { RelationPairMetricVM, strengthFromAbsCorrelation, toOverviewViewModel, toneFromNumber } from "../../lib/view-models";
+import {
+  classifyPcr,
+  RelationPairMetricVM,
+  strengthFromAbsCorrelation,
+  toOverviewViewModel,
+  toneFromNumber
+} from "../../lib/view-models";
 
 export const dynamic = "force-dynamic";
 
@@ -106,21 +112,22 @@ export default function OverviewPage() {
         >
           <div className="space-y-4">
             {structureSnapshots.map((snap) => {
-              const tone = toneFromNumber((snap.call_total ?? 0) - (snap.put_total ?? 0));
+              const pcrSignal = classifyPcr(snap.put_total, snap.call_total);
               return (
                 <div key={snap.id} className="space-y-2 rounded-lg border border-border bg-elevated/50 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <p className="font-medium text-foreground">
                       {snap.view_type.toUpperCase()} · {snap.series_name} · Exp {snap.series_expiration_date || "-"} · DTE {fmtNum(snap.series_dte, 2)}
                     </p>
-                    <SignalChip label={tone === "up" ? "Bullish skew" : tone === "down" ? "Bearish skew" : "Balanced"} tone={tone} />
+                    <SignalChip label={pcrSignal.label} tone={pcrSignal.tone} />
                   </div>
                   <RatioBar
                     leftValue={snap.put_total ?? 0}
                     rightValue={snap.call_total ?? 0}
                     leftLabel="Put"
                     rightLabel="Call"
-                    tone={tone}
+                    tone={pcrSignal.tone}
+                    pcr={pcrSignal.pcr}
                   />
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                     <span>{fmtDateTime(snap.snapshot_time_bkk)}</span>

@@ -139,6 +139,8 @@ Optional tuning (safe to skip; defaults exist in code):
 - `SYMBOL_SESSION_MODE_XAUUSD=auto`
 - `SYMBOL_SESSION_MODE_THBUSD=auto`
 - `SYMBOL_SESSION_MODE_BTCUSD=auto`
+  - Modes: `auto | always_open | always_closed | fx_24_5 | ifc_metal`
+  - `auto` default: XAUUSD=`ifc_metal`, THBUSD=`fx_24_5`, BTCUSD=`always_open`
 - `CME_SESSION_TIMEZONE=America/Chicago`
 - `CME_HOLIDAY_CLOSURES=`
 - `CME_SESSION_FORCE_OPEN=false`

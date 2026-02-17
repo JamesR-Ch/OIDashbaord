@@ -5,25 +5,28 @@ export function RatioBar({
   rightValue,
   leftLabel,
   rightLabel,
-  tone
+  tone,
+  pcr
 }: {
   leftValue: number;
   rightValue: number;
   leftLabel: string;
   rightLabel: string;
   tone: "up" | "down" | "neutral";
+  pcr?: number | null;
 }) {
   const total = Math.max(0, leftValue) + Math.max(0, rightValue);
   const leftPct = total > 0 ? (Math.max(0, leftValue) / total) * 100 : 50;
   const rightPct = 100 - leftPct;
-  const pcr = rightValue === 0 ? 0 : leftValue / rightValue;
+  const ratio = pcr === undefined ? (rightValue === 0 ? Number.POSITIVE_INFINITY : leftValue / rightValue) : pcr;
+  const ratioLabel = ratio == null ? "-" : Number.isFinite(ratio) ? fmtNum(ratio, 2) : "∞";
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
         <span className="text-signal-down">{leftLabel} {fmtNum(leftValue, 2)}</span>
         <span className={tone === "up" ? "text-signal-up" : tone === "down" ? "text-signal-down" : "text-signal-neutral"}>
-          PCR {fmtNum(pcr, 2)}
+          PCR {ratioLabel}
         </span>
         <span className="text-signal-up">{rightLabel} {fmtNum(rightValue, 2)}</span>
       </div>

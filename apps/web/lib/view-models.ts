@@ -2,6 +2,13 @@ export type StatusTone = "up" | "down" | "neutral";
 export type HeatLevel = 0 | 1 | 2 | 3 | 4;
 export type SignalStrength = "weak" | "moderate" | "strong";
 export type StaleState = "fresh" | "stale" | "unknown";
+export type PcrSignalLabel = "Bearish Skew" | "Watch Put" | "Neutral" | "Watch Call" | "Bullish Skew";
+
+export interface PcrSignal {
+  pcr: number | null;
+  tone: StatusTone;
+  label: PcrSignalLabel;
+}
 
 export interface MarketStateVM {
   open: boolean;
@@ -170,6 +177,23 @@ export interface RelationsViewModel {
 export function toneFromNumber(value: number | null | undefined): StatusTone {
   if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "neutral";
   return value > 0 ? "up" : "down";
+}
+
+export function classifyPcr(putTotal: number | null | undefined, callTotal: number | null | undefined): PcrSignal {
+  const puts = typeof putTotal === "number" && Number.isFinite(putTotal) ? Math.max(putTotal, 0) : 0;
+  const calls = typeof callTotal === "number" && Number.isFinite(callTotal) ? Math.max(callTotal, 0) : 0;
+
+  if (puts === 0 && calls === 0) {
+    return { pcr: null, tone: "neutral", label: "Neutral" };
+  }
+
+  const pcr = calls === 0 ? Number.POSITIVE_INFINITY : puts / calls;
+
+  if (pcr >= 2) return { pcr, tone: "down", label: "Bearish Skew" };
+  if (pcr >= 1.5) return { pcr, tone: "down", label: "Watch Put" };
+  if (pcr <= 0.5) return { pcr, tone: "up", label: "Bullish Skew" };
+  if (pcr <= 0.75) return { pcr, tone: "up", label: "Watch Call" };
+  return { pcr, tone: "neutral", label: "Neutral" };
 }
 
 export function heatLevelFromValue(value: number | null | undefined): HeatLevel {
