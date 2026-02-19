@@ -41,6 +41,7 @@ Run in order:
 12. `supabase/migrations/012_backfill_cme_delta_previous_times.sql`
 13. `supabase/migrations/013_auth_login_lockouts.sql`
 14. `supabase/migrations/014_auth_login_lockouts_rls.sql`
+15. `supabase/migrations/015_function_search_path_hardening.sql`
 
 ## Deployment target
 

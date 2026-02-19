@@ -5,7 +5,7 @@ This guide deploys:
 - `worker` (cron jobs + Playwright)
 - `Supabase` (Postgres + Auth)
 
-Use this once your code is ready and migrations `001` to `014` are prepared.
+Use this once your code is ready and migrations `001` to `015` are prepared.
 
 ## 1. Prepare Accounts
 
@@ -42,6 +42,7 @@ Use this once your code is ready and migrations `001` to `014` are prepared.
    - `supabase/migrations/012_backfill_cme_delta_previous_times.sql`
    - `supabase/migrations/013_auth_login_lockouts.sql`
    - `supabase/migrations/014_auth_login_lockouts_rls.sql`
+   - `supabase/migrations/015_function_search_path_hardening.sql`
 
 ## 4. Create First Admin User
 
@@ -213,9 +214,11 @@ Optional tuning (safe to skip; defaults exist in code):
 1. `WORKER_CONTROL_SECRET` same in web/worker.
 2. Supabase RLS migrations applied.
 3. Admin user exists in `user_roles`.
-4. Test command passes locally:
+4. Supabase Auth leaked-password protection enabled:
+   - `Supabase Dashboard -> Authentication -> Providers -> Email -> Password security -> Leaked password protection = ON`
+5. Test command passes locally:
    - `npm run test`
-5. Worker and web both healthy after restart.
+6. Worker and web both healthy after restart.
 
 ## 14. Performance + Cost Controls (Recommended)
 

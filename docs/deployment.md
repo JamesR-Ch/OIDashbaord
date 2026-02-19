@@ -77,6 +77,7 @@ Set in both Railway services where relevant:
    - `supabase/migrations/012_backfill_cme_delta_previous_times.sql`
    - `supabase/migrations/013_auth_login_lockouts.sql`
    - `supabase/migrations/014_auth_login_lockouts_rls.sql`
+   - `supabase/migrations/015_function_search_path_hardening.sql`
 2. Seed admin role in `user_roles` for at least one auth user.
 3. `002` is now rerunnable (uses `drop policy if exists` guards).
 
@@ -138,7 +139,7 @@ order by status_code;
 ## Final Go-Live Checklist
 
 1. Migrations:
-   - Ensure `001` through `014` have been applied in order.
+   - Ensure `001` through `015` have been applied in order.
 2. Secrets/env:
    - Verify all required env vars are set in Railway web/worker services.
    - Confirm `WORKER_CONTROL_SECRET` is identical in web and worker.
@@ -147,6 +148,8 @@ order by status_code;
    - `GET worker /health/details` (with secret) returns latest jobs and symbol sessions.
 4. Auth/RBAC:
    - Confirm at least one `admin` row exists in `public.user_roles`.
+   - In Supabase Dashboard, enable leaked password protection:
+     `Authentication -> Providers -> Email -> Password security -> Leaked password protection`.
 5. Webhook:
    - Send a valid TradingView payload and verify `200` + `price_ticks` insert.
    - Confirm 4xx errors in `webhook_request_log` are near zero after alert template lock.
