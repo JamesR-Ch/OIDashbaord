@@ -54,11 +54,10 @@ Run in order:
 - Relation analytics run only during FX trading session hours.
 - Symbol market-hour assumptions for relation engine:
   - `BTCUSD`: crypto 24/7
-  - `XAUUSD`: IFC metals session (`Europe/Berlin`):
-    - opens Sunday 23:00
-    - Mon-Thu daily break 22:00-23:00
-    - closes Friday 22:00
-  - `THBUSD`: FX session (Sun 17:00 ET to Fri 17:00 ET, DST-aware via `America/New_York`)
+  - `XAUUSD`, `THBUSD`: CET server-time schedule (`Europe/Berlin`):
+    - Mon-Thu: 00:00-23:00
+    - Fri: 00:00-22:00
+    - Sat/Sun: closed
 - You can override per symbol using env:
   - `SYMBOL_SESSION_MODE_XAUUSD`
   - `SYMBOL_SESSION_MODE_THBUSD`

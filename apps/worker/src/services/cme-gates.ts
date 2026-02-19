@@ -5,7 +5,7 @@ import type { SymbolCode } from "@oid/shared";
 
 const BKK_ZONE = "Asia/Bangkok";
 const FX_SESSION_ZONE = "America/New_York";
-const IFC_METAL_ZONE = "Europe/Berlin";
+const CET_MARKET_ZONE = "Europe/Berlin";
 
 export function getTradeDate(now = DateTime.now().setZone(BKK_ZONE)): string {
   return now.toISODate() || "";
@@ -87,28 +87,28 @@ export function getFxSessionState(nowUtc = DateTime.utc()) {
   return { open: true, reason: "fx_session_open", session_time: sessionTime.toISO() };
 }
 
-// IFC metals schedule (CET/CEST reference):
-// - Open Sunday 23:00 Berlin
-// - Mon-Thu maintenance break 22:00-23:00 Berlin
-// - Close Friday 22:00 Berlin
+// CET server-time schedule:
+// - Mon-Thu: 00:00-23:00
+// - Fri: 00:00-22:00
+// - Sat/Sun: closed
 export function getIfcXauSessionState(nowUtc = DateTime.utc()) {
-  const sessionTime = nowUtc.setZone(IFC_METAL_ZONE);
+  const sessionTime = nowUtc.setZone(CET_MARKET_ZONE);
   const weekday = sessionTime.weekday; // 1 Mon ... 7 Sun
   const minuteOfDay = sessionTime.hour * 60 + sessionTime.minute;
-  const breakStart = 22 * 60;
-  const breakEnd = 23 * 60;
+  const weekdayClose = 23 * 60;
+  const fridayClose = 22 * 60;
 
   if (weekday === 6) {
     return { open: false, reason: "ifc_metal_saturday_closed", session_time: sessionTime.toISO() };
   }
-  if (weekday === 7 && minuteOfDay < breakEnd) {
-    return { open: false, reason: "ifc_metal_sunday_pre_open", session_time: sessionTime.toISO() };
+  if (weekday === 7) {
+    return { open: false, reason: "ifc_metal_sunday_closed", session_time: sessionTime.toISO() };
   }
-  if (weekday === 5 && minuteOfDay >= breakStart) {
+  if (weekday === 5 && minuteOfDay >= fridayClose) {
     return { open: false, reason: "ifc_metal_friday_post_close", session_time: sessionTime.toISO() };
   }
-  if (weekday >= 1 && weekday <= 4 && minuteOfDay >= breakStart && minuteOfDay < breakEnd) {
-    return { open: false, reason: "ifc_metal_daily_break", session_time: sessionTime.toISO() };
+  if (weekday >= 1 && weekday <= 4 && minuteOfDay >= weekdayClose) {
+    return { open: false, reason: "ifc_metal_weekday_post_close", session_time: sessionTime.toISO() };
   }
 
   return { open: true, reason: "ifc_metal_session_open", session_time: sessionTime.toISO() };
@@ -117,7 +117,7 @@ export function getIfcXauSessionState(nowUtc = DateTime.utc()) {
 export function isSymbolMarketOpen(symbol: SymbolCode, nowUtc = DateTime.utc()) {
   const configuredMode = workerConfig.symbolSessionModes[symbol] || "auto";
   const mode = configuredMode === "auto"
-    ? (symbol === "BTCUSD" ? "always_open" : symbol === "XAUUSD" ? "ifc_metal" : "fx_24_5")
+    ? (symbol === "BTCUSD" ? "always_open" : "ifc_metal")
     : configuredMode;
 
   if (mode === "always_open") {
