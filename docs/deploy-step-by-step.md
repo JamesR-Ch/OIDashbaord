@@ -5,7 +5,7 @@ This guide deploys:
 - `worker` (cron jobs + Playwright)
 - `Supabase` (Postgres + Auth)
 
-Use this once your code is ready and migrations `001` to `013` are prepared.
+Use this once your code is ready and migrations `001` to `014` are prepared.
 
 ## 1. Prepare Accounts
 
@@ -41,6 +41,7 @@ Use this once your code is ready and migrations `001` to `013` are prepared.
    - `supabase/migrations/011_cme_delta_previous_times.sql`
    - `supabase/migrations/012_backfill_cme_delta_previous_times.sql`
    - `supabase/migrations/013_auth_login_lockouts.sql`
+   - `supabase/migrations/014_auth_login_lockouts_rls.sql`
 
 ## 4. Create First Admin User
 

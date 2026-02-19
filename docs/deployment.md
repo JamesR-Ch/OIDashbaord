@@ -76,6 +76,7 @@ Set in both Railway services where relevant:
    - `supabase/migrations/011_cme_delta_previous_times.sql`
    - `supabase/migrations/012_backfill_cme_delta_previous_times.sql`
    - `supabase/migrations/013_auth_login_lockouts.sql`
+   - `supabase/migrations/014_auth_login_lockouts_rls.sql`
 2. Seed admin role in `user_roles` for at least one auth user.
 3. `002` is now rerunnable (uses `drop policy if exists` guards).
 
@@ -137,7 +138,7 @@ order by status_code;
 ## Final Go-Live Checklist
 
 1. Migrations:
-   - Ensure `001` through `013` have been applied in order.
+   - Ensure `001` through `014` have been applied in order.
 2. Secrets/env:
    - Verify all required env vars are set in Railway web/worker services.
    - Confirm `WORKER_CONTROL_SECRET` is identical in web and worker.
