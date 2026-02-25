@@ -10,6 +10,7 @@ import { KpiCard } from "../../components/dashboard/kpi-card";
 import { RatioBar } from "../../components/dashboard/ratio-bar";
 import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
+import { TopActiveTimelineMatrix } from "../../components/dashboard/top-active-timeline-matrix";
 import { PageSection } from "../../components/layout/page-section";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtDateTimeShort, fmtNum } from "../../lib/format";
@@ -53,15 +54,6 @@ export default function OverviewPage() {
     const arr = topActivesBySnapshot.get(row.snapshot_id) || [];
     arr.push(row);
     topActivesBySnapshot.set(row.snapshot_id, arr);
-  }
-  const topActiveTimeline = vm.cmeSnapshots
-    .slice(0, 12)
-    .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
-
-  function topActiveRankCell(snapshotId: string, rank: number) {
-    const row = (topActivesBySnapshot.get(snapshotId) || []).find((x) => x.rank === rank);
-    if (!row) return "-";
-    return `${row.strike}  P${row.put} / C${row.call}`;
   }
 
   const pricesBySymbol = new Map(vm.prices.map((p) => [p.symbol, p]));
@@ -224,32 +216,7 @@ export default function OverviewPage() {
 
             <div>
               <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
-              <DecisionTable compact>
-                <THead>
-                  <TR>
-                    <TH>Time (BKK)</TH>
-                    <TH>Type</TH>
-                    <TH>Series</TH>
-                    <TH>R1</TH>
-                    <TH>R2</TH>
-                    <TH>R3</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {topActiveTimeline.length === 0 ? (
-                    <TR><TD colSpan={6}>No timeline rows yet.</TD></TR>
-                  ) : topActiveTimeline.map((snap) => (
-                    <TR key={`timeline-${snap.id}`}>
-                      <TD>{fmtDateTime(snap.snapshot_time_bkk)}</TD>
-                      <TD>{snap.view_type}</TD>
-                      <TD>{snap.series_name}</TD>
-                      <TD>{topActiveRankCell(snap.id, 1)}</TD>
-                      <TD>{topActiveRankCell(snap.id, 2)}</TD>
-                      <TD>{topActiveRankCell(snap.id, 3)}</TD>
-                    </TR>
-                  ))}
-                </TBody>
-              </DecisionTable>
+              <TopActiveTimelineMatrix snapshots={vm.cmeSnapshots.slice(0, 12)} topActives={vm.topActives} />
             </div>
           </div>
         </AnalyticsPanel>

@@ -7,6 +7,7 @@ import { DecisionTable, TBody, TD, TH, THead, TR } from "../../components/dashbo
 import { RatioBar } from "../../components/dashboard/ratio-bar";
 import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
+import { TopActiveTimelineMatrix } from "../../components/dashboard/top-active-timeline-matrix";
 import { PageSection } from "../../components/layout/page-section";
 import { StateBlock } from "../../components/dashboard/state-block";
 import { useOverviewData } from "../../lib/use-overview-data";
@@ -33,15 +34,6 @@ export default function CmePage() {
     const arr = topBySnapshot.get(row.snapshot_id) || [];
     arr.push(row);
     topBySnapshot.set(row.snapshot_id, arr);
-  }
-  const topActiveTimeline = vm.snapshots
-    .slice(0, 16)
-    .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
-
-  function topActiveRankCell(snapshotId: string, rank: number) {
-    const row = (topBySnapshot.get(snapshotId) || []).find((x) => x.rank === rank);
-    if (!row) return "-";
-    return `${row.strike}  P${row.put} / C${row.call}`;
   }
 
   const latestDeltaByView = new Map<string, typeof vm.deltas[number]>();
@@ -174,32 +166,7 @@ export default function CmePage() {
 
             <div>
               <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
-              <DecisionTable compact>
-                <THead>
-                  <TR>
-                    <TH>Time (BKK)</TH>
-                    <TH>Type</TH>
-                    <TH>Series</TH>
-                    <TH>R1</TH>
-                    <TH>R2</TH>
-                    <TH>R3</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {topActiveTimeline.length === 0 ? (
-                    <TR><TD colSpan={6}>No timeline rows yet.</TD></TR>
-                  ) : topActiveTimeline.map((snap) => (
-                    <TR key={`timeline-${snap.id}`}>
-                      <TD>{fmtDateTime(snap.snapshot_time_bkk)}</TD>
-                      <TD>{snap.view_type}</TD>
-                      <TD>{snap.series_name}</TD>
-                      <TD>{topActiveRankCell(snap.id, 1)}</TD>
-                      <TD>{topActiveRankCell(snap.id, 2)}</TD>
-                      <TD>{topActiveRankCell(snap.id, 3)}</TD>
-                    </TR>
-                  ))}
-                </TBody>
-              </DecisionTable>
+              <TopActiveTimelineMatrix snapshots={vm.snapshots.slice(0, 16)} topActives={vm.topActives} />
             </div>
           </div>
         </AnalyticsPanel>
