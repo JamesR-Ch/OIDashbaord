@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-const DEFAULT_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MS || "15000");
-const DEFAULT_HIDDEN_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS || "60000");
-const DEFAULT_MAX_BACKOFF_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS || "120000");
+const DEFAULT_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MS || "30000");
+const DEFAULT_HIDDEN_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS || "180000");
+const DEFAULT_MAX_BACKOFF_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS || "300000");
 
 function normalizeMs(value: number, fallback: number) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
@@ -22,12 +22,12 @@ export function useOverviewData(
     let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let requestAbort: AbortController | null = null;
-    let retryDelayMs = normalizeMs(refreshMs, 15000);
+    let retryDelayMs = normalizeMs(refreshMs, DEFAULT_REFRESH_MS);
     let hadError = false;
 
-    const baseRefreshMs = normalizeMs(refreshMs, 15000);
-    const hiddenRefresh = normalizeMs(hiddenRefreshMs, Math.max(baseRefreshMs, 60000));
-    const maxBackoffMs = normalizeMs(DEFAULT_MAX_BACKOFF_MS, 120000);
+    const baseRefreshMs = normalizeMs(refreshMs, DEFAULT_REFRESH_MS);
+    const hiddenRefresh = normalizeMs(hiddenRefreshMs, Math.max(baseRefreshMs, DEFAULT_HIDDEN_REFRESH_MS));
+    const maxBackoffMs = DEFAULT_MAX_BACKOFF_MS;
 
     function clearTimer() {
       if (timer) {

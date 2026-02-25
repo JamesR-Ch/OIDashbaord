@@ -4,7 +4,7 @@ import { DateTime } from "luxon";
 import { assertAuthenticated, AuthError } from "../../../../lib/auth";
 
 const PRICE_LOOKBACK_ROWS = 36;
-const CME_SNAPSHOT_LOOKBACK_ROWS = 24;
+const CME_SNAPSHOT_LOOKBACK_ROWS = 12;
 
 export async function GET(req: NextRequest) {
   try {

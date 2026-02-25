@@ -105,11 +105,11 @@ Core routes:
 - Admin only: `/settings` (middleware + server-side role check)
 
 Data refresh:
-- Frontend polls `/api/dashboard/overview-public` every 15s for V1
+- Frontend polls `/api/dashboard/overview-public` every 30s by default
 - Polling is adaptive for cost/performance:
-  - visible tab: `NEXT_PUBLIC_DASHBOARD_POLL_MS` (default `15000`)
-  - background tab: `NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS` (default `60000`)
-  - fetch errors/offline use backoff up to `NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS` (default `120000`)
+  - visible tab: `NEXT_PUBLIC_DASHBOARD_POLL_MS` (default `30000`)
+  - background tab: `NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS` (default `180000`)
+  - fetch errors/offline use backoff up to `NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS` (default `300000`)
 - Realtime subscriptions are intentionally deferred to later phase
 
 ## TradingView Live Checklist

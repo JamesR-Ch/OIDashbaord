@@ -225,9 +225,9 @@ Optional tuning (safe to skip; defaults exist in code):
 Use these to reduce resource usage while keeping UX responsive:
 
 Web service:
-- `NEXT_PUBLIC_DASHBOARD_POLL_MS=15000`
-- `NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS=60000`
-- `NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS=120000`
+- `NEXT_PUBLIC_DASHBOARD_POLL_MS=30000`
+- `NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS=180000`
+- `NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS=300000`
 
 Notes:
 - Background tabs will poll slower automatically (lower API + DB load).

@@ -17,7 +17,7 @@ import { classifyPcr, toCmeViewModel, toneFromNumber } from "../../lib/view-mode
 export const dynamic = "force-dynamic";
 
 export default function CmePage() {
-  const { data, loading, error } = useOverviewData(15000);
+  const { data, loading, error } = useOverviewData();
   const vm = toCmeViewModel(data);
 
   const cmeAge = ageMinutes(vm.snapshots?.[0]?.snapshot_time_bkk);
@@ -166,7 +166,7 @@ export default function CmePage() {
 
             <div>
               <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
-              <TopActiveTimelineMatrix snapshots={vm.snapshots.slice(0, 16)} topActives={vm.topActives} />
+              <TopActiveTimelineMatrix snapshots={vm.snapshots.slice(0, 12)} topActives={vm.topActives} />
             </div>
           </div>
         </AnalyticsPanel>

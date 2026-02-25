@@ -16,7 +16,7 @@ import { strengthFromAbsCorrelation, toRelationsViewModel, toneFromNumber } from
 export const dynamic = "force-dynamic";
 
 export default function RelationsPage() {
-  const { data, loading, error } = useOverviewData(15000);
+  const { data, loading, error } = useOverviewData();
   const vm = toRelationsViewModel(data);
   const relationAge = ageMinutes(vm.relation?.anchor_time_bkk);
 
