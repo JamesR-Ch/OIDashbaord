@@ -32,6 +32,7 @@ Set in both Railway services where relevant:
 - `WORKER_RETENTION_CRON` (worker)
 - `WORKER_CONTROL_PORT` (worker)
 - `WORKER_CONTROL_SECRET` (worker)
+- `WORKER_MAX_UPTIME_HOURS` (worker, default `0`; set e.g. `24` to auto-recycle process and cap memory growth)
 - `WORKER_CONTROL_URL` (web only, points to worker control endpoint)
 - `CME_TIMEOUT_MS` (worker)
 - `CME_HEADLESS` (worker)

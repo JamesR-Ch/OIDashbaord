@@ -1,4 +1,4 @@
-import { chromium, type Browser, type Frame, type Page } from "playwright";
+import type { Browser, Frame, Page } from "playwright";
 import { DateTime } from "luxon";
 import { workerConfig } from "../lib/config";
 
@@ -226,6 +226,7 @@ async function readOptionFieldsFromPage(page: Page): Promise<{ optionSymbol: str
 export async function extractQuikStrikeView(url: string, tab: "intraday" | "oi", tradeDateBkk: string): Promise<ExtractedSnapshot> {
   let browser: Browser | undefined;
   try {
+    const { chromium } = await import("playwright");
     browser = await chromium.launch({ headless: workerConfig.cmeHeadless });
     const context = await browser.newContext({
       userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

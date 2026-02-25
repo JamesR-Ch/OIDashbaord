@@ -33,6 +33,12 @@ for (const symbol of Object.keys(SYMBOL_SESSION_MODES) as SymbolCode[]) {
   SYMBOL_SESSION_MODES[symbol] = parseSessionMode(process.env[key], SYMBOL_SESSION_MODES[symbol]);
 }
 
+function parseNonNegativeNumber(value: string | undefined, fallback: number): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return n;
+}
+
 export const workerConfig = {
   supabaseUrl: process.env.SUPABASE_URL || "",
   supabaseServiceRole: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
@@ -58,5 +64,6 @@ export const workerConfig = {
   jobRunsRetentionDays: Number(process.env.JOB_RUNS_RETENTION_DAYS || "30"),
   authLockoutsRetentionDays: Number(process.env.AUTH_LOCKOUTS_RETENTION_DAYS || "30"),
   cmeSeriesLinksRetentionDays: Number(process.env.CME_SERIES_LINKS_RETENTION_DAYS || "90"),
+  maxUptimeHours: parseNonNegativeNumber(process.env.WORKER_MAX_UPTIME_HOURS, 0),
   symbolSessionModes: SYMBOL_SESSION_MODES
 };

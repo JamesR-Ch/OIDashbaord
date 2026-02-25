@@ -5,9 +5,6 @@ import { SYMBOLS } from "@oid/shared";
 import { workerConfig } from "./lib/config";
 import { db } from "./lib/db";
 import { logger } from "./services/logger";
-import { runRelationJob } from "./jobs/relation-job";
-import { runCmeExtractionJob } from "./jobs/cme-job";
-import { runRetentionJob } from "./jobs/retention-job";
 import { isSymbolMarketOpen } from "./services/cme-gates";
 
 logger.info(
@@ -15,7 +12,8 @@ logger.info(
     relationCron: workerConfig.relationCron,
     cmeCron: workerConfig.cmeCron,
     retentionCron: workerConfig.retentionCron,
-    controlPort: workerConfig.controlPort
+    controlPort: workerConfig.controlPort,
+    maxUptimeHours: workerConfig.maxUptimeHours
   },
   "worker booting"
 );
@@ -25,6 +23,28 @@ const BKK_ZONE = "Asia/Bangkok";
 type RunNowJob = "relation" | "cme" | "both";
 type ManagedJob = "relation_30m" | "cme_30m" | "retention_cleanup";
 const runningJobs = new Set<ManagedJob>();
+let recycleRequested = false;
+
+async function runRelation(anchor: DateTime) {
+  const { runRelationJob } = await import("./jobs/relation-job");
+  await runRelationJob(anchor);
+}
+
+async function runCme(anchor: DateTime) {
+  const { runCmeExtractionJob } = await import("./jobs/cme-job");
+  await runCmeExtractionJob(anchor);
+}
+
+async function runRetention() {
+  const { runRetentionJob } = await import("./jobs/retention-job");
+  await runRetentionJob();
+}
+
+function maybeExitForRecycle() {
+  if (!recycleRequested || runningJobs.size > 0) return;
+  logger.warn({ runningJobs: Array.from(runningJobs.values()) }, "worker recycling due to max uptime");
+  setTimeout(() => process.exit(0), 250);
+}
 
 async function markSkippedOverlap(jobName: ManagedJob, source: "cron" | "run_now") {
   try {
@@ -60,34 +80,50 @@ async function runManagedJob(
     await fn();
   } finally {
     runningJobs.delete(jobName);
+    maybeExitForRecycle();
   }
 }
 
 async function runNow(job: RunNowJob) {
+  if (recycleRequested) {
+    throw new Error("worker_recycling_in_progress");
+  }
   const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
   if (job === "relation" || job === "both") {
-    await runManagedJob("relation_30m", "run_now", () => runRelationJob(anchor));
+    await runManagedJob("relation_30m", "run_now", () => runRelation(anchor));
   }
   if (job === "cme" || job === "both") {
-    await runManagedJob("cme_30m", "run_now", () => runCmeExtractionJob(anchor));
+    await runManagedJob("cme_30m", "run_now", () => runCme(anchor));
   }
 }
 
 cron.schedule(workerConfig.relationCron, async () => {
+  if (recycleRequested) return;
   const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
-  await runManagedJob("relation_30m", "cron", () => runRelationJob(anchor));
+  await runManagedJob("relation_30m", "cron", () => runRelation(anchor));
 }, { timezone: BKK_ZONE });
 
 cron.schedule(workerConfig.cmeCron, async () => {
+  if (recycleRequested) return;
   const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
-  await runManagedJob("cme_30m", "cron", () => runCmeExtractionJob(anchor));
+  await runManagedJob("cme_30m", "cron", () => runCme(anchor));
 }, { timezone: BKK_ZONE });
 
 cron.schedule(workerConfig.retentionCron, async () => {
-  await runManagedJob("retention_cleanup", "cron", () => runRetentionJob());
+  if (recycleRequested) return;
+  await runManagedJob("retention_cleanup", "cron", () => runRetention());
 }, { timezone: BKK_ZONE });
 
 logger.info("worker schedulers registered");
+
+if (workerConfig.maxUptimeHours > 0) {
+  const maxUptimeMs = Math.round(workerConfig.maxUptimeHours * 60 * 60 * 1000);
+  setTimeout(() => {
+    recycleRequested = true;
+    logger.warn({ maxUptimeHours: workerConfig.maxUptimeHours }, "max uptime reached; recycle requested");
+    maybeExitForRecycle();
+  }, maxUptimeMs);
+}
 
 const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/health") {
@@ -171,6 +207,8 @@ const server = http.createServer(async (req, res) => {
           ok: true,
           now_utc: DateTime.utc().toISO(),
           running_jobs: Array.from(runningJobs.values()),
+          recycle_requested: recycleRequested,
+          max_uptime_hours: workerConfig.maxUptimeHours,
           latest_jobs: Array.from(latestByJob.values()),
           alerts,
           symbol_sessions: symbolSessions,
