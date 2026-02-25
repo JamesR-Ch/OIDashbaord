@@ -54,6 +54,15 @@ export default function OverviewPage() {
     arr.push(row);
     topActivesBySnapshot.set(row.snapshot_id, arr);
   }
+  const topActiveTimeline = vm.cmeSnapshots
+    .slice(0, 12)
+    .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
+
+  function topActiveRankCell(snapshotId: string, rank: number) {
+    const row = (topActivesBySnapshot.get(snapshotId) || []).find((x) => x.rank === rank);
+    if (!row) return "-";
+    return `${row.strike}  P${row.put} / C${row.call}`;
+  }
 
   const pricesBySymbol = new Map(vm.prices.map((p) => [p.symbol, p]));
   const cmeMarketOpen = vm.marketStatus?.cme_gold?.open;
@@ -180,7 +189,7 @@ export default function OverviewPage() {
       <PageSection className="lg:grid-cols-[1fr_1.15fr]">
         <AnalyticsPanel
           title="Top Active Strikes"
-          subtitle="Top 3 by intraday and OI"
+          subtitle="Latest top 3 plus timeline history"
           rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
         >
           <div className="space-y-4">
@@ -212,6 +221,36 @@ export default function OverviewPage() {
                 </div>
               );
             })}
+
+            <div>
+              <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
+              <DecisionTable compact>
+                <THead>
+                  <TR>
+                    <TH>Time (BKK)</TH>
+                    <TH>Type</TH>
+                    <TH>Series</TH>
+                    <TH>R1</TH>
+                    <TH>R2</TH>
+                    <TH>R3</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {topActiveTimeline.length === 0 ? (
+                    <TR><TD colSpan={6}>No timeline rows yet.</TD></TR>
+                  ) : topActiveTimeline.map((snap) => (
+                    <TR key={`timeline-${snap.id}`}>
+                      <TD>{fmtDateTime(snap.snapshot_time_bkk)}</TD>
+                      <TD>{snap.view_type}</TD>
+                      <TD>{snap.series_name}</TD>
+                      <TD>{topActiveRankCell(snap.id, 1)}</TD>
+                      <TD>{topActiveRankCell(snap.id, 2)}</TD>
+                      <TD>{topActiveRankCell(snap.id, 3)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </DecisionTable>
+            </div>
           </div>
         </AnalyticsPanel>
 

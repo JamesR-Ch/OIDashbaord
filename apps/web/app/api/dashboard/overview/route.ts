@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import { assertAuthenticated, AuthError } from "../../../../lib/auth";
 
 const PRICE_LOOKBACK_ROWS = 36;
+const CME_SNAPSHOT_LOOKBACK_ROWS = 24;
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       .from("cme_snapshots")
       .select("*")
       .order("snapshot_time_utc", { ascending: false })
-      .limit(2),
+      .limit(CME_SNAPSHOT_LOOKBACK_ROWS),
     adminDb
       .from("job_runs")
       .select("job_name,status,started_at,finished_at,metadata,error_message")

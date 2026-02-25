@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import { getDashboardMarketStatus } from "../../../../lib/market-status";
 
 const PRICE_LOOKBACK_ROWS = 36;
+const CME_SNAPSHOT_LOOKBACK_ROWS = 24;
 
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
       .from("cme_snapshots")
       .select("*")
       .order("snapshot_time_utc", { ascending: false })
-      .limit(2),
+      .limit(CME_SNAPSHOT_LOOKBACK_ROWS),
     adminDb
       .from("cme_snapshot_deltas")
       .select("*")

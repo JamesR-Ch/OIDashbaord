@@ -34,6 +34,15 @@ export default function CmePage() {
     arr.push(row);
     topBySnapshot.set(row.snapshot_id, arr);
   }
+  const topActiveTimeline = vm.snapshots
+    .slice(0, 16)
+    .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
+
+  function topActiveRankCell(snapshotId: string, rank: number) {
+    const row = (topBySnapshot.get(snapshotId) || []).find((x) => x.rank === rank);
+    if (!row) return "-";
+    return `${row.strike}  P${row.put} / C${row.call}`;
+  }
 
   const latestDeltaByView = new Map<string, typeof vm.deltas[number]>();
   const sortedDeltas = [...vm.deltas].sort((a, b) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime());
@@ -130,7 +139,7 @@ export default function CmePage() {
       <PageSection className="lg:grid-cols-2">
         <AnalyticsPanel
           title="Top 3 Active Strikes"
-          subtitle="Grouped by latest snapshots"
+          subtitle="Grouped latest snapshots with timeline history"
           rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
         >
           <div className="space-y-4">
@@ -162,6 +171,36 @@ export default function CmePage() {
                 </div>
               );
             })}
+
+            <div>
+              <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
+              <DecisionTable compact>
+                <THead>
+                  <TR>
+                    <TH>Time (BKK)</TH>
+                    <TH>Type</TH>
+                    <TH>Series</TH>
+                    <TH>R1</TH>
+                    <TH>R2</TH>
+                    <TH>R3</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {topActiveTimeline.length === 0 ? (
+                    <TR><TD colSpan={6}>No timeline rows yet.</TD></TR>
+                  ) : topActiveTimeline.map((snap) => (
+                    <TR key={`timeline-${snap.id}`}>
+                      <TD>{fmtDateTime(snap.snapshot_time_bkk)}</TD>
+                      <TD>{snap.view_type}</TD>
+                      <TD>{snap.series_name}</TD>
+                      <TD>{topActiveRankCell(snap.id, 1)}</TD>
+                      <TD>{topActiveRankCell(snap.id, 2)}</TD>
+                      <TD>{topActiveRankCell(snap.id, 3)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </DecisionTable>
+            </div>
           </div>
         </AnalyticsPanel>
 
