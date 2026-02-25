@@ -7,7 +7,6 @@ import { DecisionTable, TBody, TD, TH, THead, TR } from "../../components/dashbo
 import { RatioBar } from "../../components/dashboard/ratio-bar";
 import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
-import { TopActiveTimelineMatrix } from "../../components/dashboard/top-active-timeline-matrix";
 import { PageSection } from "../../components/layout/page-section";
 import { StateBlock } from "../../components/dashboard/state-block";
 import { useOverviewData } from "../../lib/use-overview-data";
@@ -89,49 +88,10 @@ export default function CmePage() {
         ) : null}
       </PageSection>
 
-      <AnalyticsPanel
-        title="CME Snapshot Tape"
-        subtitle="Dense table with directional coloring for volatility and futures changes"
-        rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
-      >
-        <DecisionTable>
-          <THead>
-            <TR>
-              <TH>Time (BKK)</TH>
-              <TH>Type</TH>
-              <TH>Series</TH>
-              <TH>Exp Date</TH>
-              <TH>DTE</TH>
-              <TH>Put</TH>
-              <TH>Call</TH>
-              <TH>Vol</TH>
-              <TH>Vol Chg</TH>
-              <TH>Fut Chg</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {vm.snapshots.map((row) => (
-              <TR key={row.id}>
-                <TD>{fmtDateTime(row.snapshot_time_bkk)}</TD>
-                <TD>{row.view_type}</TD>
-                <TD>{row.series_name}</TD>
-                <TD>{row.series_expiration_date || "-"}</TD>
-                <TD>{fmtNum(row.series_dte, 2)}</TD>
-                <TD className="text-signal-down">{row.put_total}</TD>
-                <TD className="text-signal-up">{row.call_total}</TD>
-                <TD>{fmtNum(row.vol, 2)}</TD>
-                <TD className={toneFromNumber(row.vol_chg) === "up" ? "text-signal-up" : toneFromNumber(row.vol_chg) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(row.vol_chg, 2)}</TD>
-                <TD className={toneFromNumber(row.future_chg) === "up" ? "text-signal-up" : toneFromNumber(row.future_chg) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(row.future_chg, 2)}</TD>
-              </TR>
-            ))}
-          </TBody>
-        </DecisionTable>
-      </AnalyticsPanel>
-
       <PageSection className="lg:grid-cols-2">
         <AnalyticsPanel
           title="Top 3 Active Strikes"
-          subtitle="Grouped latest snapshots with timeline history"
+          subtitle="Grouped latest snapshots"
           rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
         >
           <div className="space-y-4">
@@ -163,11 +123,6 @@ export default function CmePage() {
                 </div>
               );
             })}
-
-            <div>
-              <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
-              <TopActiveTimelineMatrix snapshots={vm.snapshots.slice(0, 12)} topActives={vm.topActives} />
-            </div>
           </div>
         </AnalyticsPanel>
 

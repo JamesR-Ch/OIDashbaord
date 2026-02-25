@@ -5,7 +5,6 @@ import { StateBlock } from "../../components/dashboard/state-block";
 import { PageHeader } from "../../components/layout/page-header";
 import { AnalyticsPanel } from "../../components/dashboard/analytics-panel";
 import { DecisionTable, TBody, TD, TH, THead, TR } from "../../components/dashboard/decision-table";
-import { HeatMatrix } from "../../components/dashboard/heat-matrix";
 import { KpiCard } from "../../components/dashboard/kpi-card";
 import { RatioBar } from "../../components/dashboard/ratio-bar";
 import { SignalChip } from "../../components/dashboard/signal-chip";
@@ -16,8 +15,6 @@ import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtDateTimeShort, fmtNum } from "../../lib/format";
 import {
   classifyPcr,
-  RelationPairMetricVM,
-  strengthFromAbsCorrelation,
   toOverviewViewModel,
   toneFromNumber
 } from "../../lib/view-models";
@@ -28,21 +25,12 @@ export default function OverviewPage() {
   const { data, loading, error } = useOverviewData();
   const vm = toOverviewViewModel(data);
 
-  const relationAge = ageMinutes(vm.relation?.anchor_time_bkk);
   const cmeAge = ageMinutes(vm.cmeSnapshots?.[0]?.snapshot_time_bkk);
 
   const intraday = vm.cmeSnapshots.find((s) => s.view_type === "intraday");
   const oi = vm.cmeSnapshots.find((s) => s.view_type === "oi");
   const structureSnapshots = [intraday, oi].filter((s): s is NonNullable<typeof s> => Boolean(s));
 
-  const pairMap = new Map<string, RelationPairMetricVM>();
-  for (const pair of vm.relation?.pair_metrics || []) pairMap.set(pair.pair, pair);
-  const corr = (a: string, b: string) => {
-    if (a === b) return 1;
-    const key = `${a}_${b}`;
-    const rev = `${b}_${a}`;
-    return pairMap.get(key)?.correlation ?? pairMap.get(rev)?.correlation ?? null;
-  };
   const symbols = ["XAUUSD", "THBUSD", "BTCUSD"];
 
   const latestDeltaByView = new Map<string, typeof vm.cmeDeltas[number]>();
@@ -69,8 +57,8 @@ export default function OverviewPage() {
   }
 
   return (
-    <AppShell status={{ relationAgeMin: relationAge, cmeAgeMin: cmeAge }}>
-      <PageHeader title="Decision Dashboard" subtitle="Live cross-asset signal board with CME put/call structure and relation analytics." />
+    <AppShell status={{ cmeAgeMin: cmeAge }}>
+      <PageHeader title="Decision Dashboard" subtitle="Live cross-asset signal board with CME put/call structure." />
 
       {loading ? <LoadingState title="Loading dashboard" /> : null}
       {error ? <ErrorState message={error} /> : null}
@@ -105,7 +93,7 @@ export default function OverviewPage() {
         })}
       </PageSection>
 
-      <PageSection className="lg:grid-cols-[1.75fr_1fr]">
+      <PageSection>
         <AnalyticsPanel
           title="CME Gold Options"
           subtitle="Put/Call dynamics and structure signal by view"
@@ -140,40 +128,6 @@ export default function OverviewPage() {
             {!intraday && !oi ? (
               <StateBlock title="No CME snapshots" detail="Wait for scheduler or run CME manually in settings." />
             ) : null}
-          </div>
-        </AnalyticsPanel>
-
-        <AnalyticsPanel
-          title="Relation Matrix (30m)"
-          subtitle="Correlation heatmap and pair-level outcomes"
-          rightSlot={
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Latest calc</p>
-              <p className="text-xs text-foreground/90">{fmtDateTime(vm.relation?.anchor_time_bkk)}</p>
-            </div>
-          }
-        >
-          <div className="space-y-3">
-            <HeatMatrix symbols={symbols} valueAt={corr} />
-
-            <div className="space-y-1.5 text-xs">
-              {(vm.relation?.pair_metrics || []).map((p) => {
-                const tone = toneFromNumber(p.relative_strength);
-                const strength = strengthFromAbsCorrelation(Math.abs(p.correlation ?? 0));
-                const text = tone === "up" ? "Outperforming" : tone === "down" ? "Underperforming" : "Neutral";
-                return (
-                  <div key={p.pair} className="flex items-center justify-between rounded-md border border-border bg-elevated/40 px-2 py-1.5">
-                    <span>{p.pair.replaceAll("_", " / ")} · {strength}</span>
-                    <span className={tone === "up" ? "text-signal-up" : tone === "down" ? "text-signal-down" : "text-signal-neutral"}>
-                      {text}
-                    </span>
-                  </div>
-                );
-              })}
-              {!vm.relation ? (
-                <StateBlock title="No relation snapshot" detail="Waiting for 30m relation job output." />
-              ) : null}
-            </div>
           </div>
         </AnalyticsPanel>
       </PageSection>

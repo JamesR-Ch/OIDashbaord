@@ -35,7 +35,7 @@ export function TopRail({
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <Badge variant="outline">Relation age: {relationAgeMin == null ? "-" : `${relationAgeMin}m`}</Badge>
+          {relationAgeMin != null ? <Badge variant="outline">Relation age: {relationAgeMin}m</Badge> : null}
           <Badge variant="outline">CME age: {cmeAgeMin == null ? "-" : `${cmeAgeMin}m`}</Badge>
         </div>
       </div>
