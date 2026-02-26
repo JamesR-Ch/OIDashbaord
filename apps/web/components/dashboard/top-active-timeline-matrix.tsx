@@ -25,6 +25,14 @@ function renderViewMatrix(
     arr.push(row);
     activeBySnapshot.set(row.snapshot_id, arr);
   }
+  const rankItemBySnapshot = new Map<string, Map<number, CmeTopActiveVM>>();
+  for (const [snapshotId, rows] of activeBySnapshot.entries()) {
+    const rankMap = new Map<number, CmeTopActiveVM>();
+    for (const row of rows) {
+      rankMap.set(row.rank, row);
+    }
+    rankItemBySnapshot.set(snapshotId, rankMap);
+  }
 
   const ranks = [1, 2, 3];
 
@@ -63,12 +71,24 @@ function renderViewMatrix(
             {ranks.map((rank) => (
               <TR key={`rank-${viewType}-${rank}`}>
                 <TD className="text-foreground/90">R{rank}</TD>
-                {timeline.map((snap) => {
-                  const item = (activeBySnapshot.get(snap.id) || []).find((row) => row.rank === rank);
+                {timeline.map((snap, idx) => {
+                  const item = rankItemBySnapshot.get(snap.id)?.get(rank);
+                  const prevSnap = idx > 0 ? timeline[idx - 1] : null;
+                  const prevItem = prevSnap ? rankItemBySnapshot.get(prevSnap.id)?.get(rank) : undefined;
+                  const strikeChanged =
+                    typeof item?.strike === "number" &&
+                    typeof prevItem?.strike === "number" &&
+                    item.strike !== prevItem.strike;
                   return (
                     <TD key={`cell-${viewType}-${snap.id}-${rank}`} colSpan={2} className="border-border text-xs">
                       <div className="grid grid-cols-2 gap-3">
-                        <span className="whitespace-nowrap">{item ? item.strike : "-"}</span>
+                        <span
+                          className={`whitespace-nowrap ${
+                            strikeChanged ? "font-bold text-sky-400" : ""
+                          }`}
+                        >
+                          {item ? item.strike : "-"}
+                        </span>
                         {item ? (
                           <span className="whitespace-nowrap">
                             <span className="text-signal-down">{item.put}</span>
