@@ -62,6 +62,7 @@ body {
     @apply overflow-x-auto rounded-lg border border-border bg-elevated/45;
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-gutter: stable both-edges;
   }
 
   .table-shell table {
@@ -79,6 +80,10 @@ body {
 
   .table-shell::-webkit-scrollbar-track {
     background: transparent;
+  }
+
+  .timeline-scroll {
+    scrollbar-gutter: stable both-edges;
   }
 
   .metric-xl {

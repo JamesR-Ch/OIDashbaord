@@ -14,6 +14,7 @@ function renderViewMatrix(
   const timeline = byView
     .filter((s) => (latestSeries ? s.series_name === latestSeries : true))
     .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
+  const tableMinWidth = Math.max(1600, 220 + timeline.length * 320);
 
   const activeBySnapshot = new Map<string, CmeTopActiveVM[]>();
   for (const row of topActives) {
@@ -29,8 +30,8 @@ function renderViewMatrix(
       <p className="text-xs text-foreground/88">
         Type: {viewType === "intraday" ? "Intraday" : "OI"}{latestSeries ? ` · Series ${latestSeries}` : ""}
       </p>
-      <div className="table-shell w-full overflow-x-scroll pb-2">
-        <Table className="min-w-[1200px] w-max text-xs">
+      <div className="table-shell timeline-scroll w-full overflow-x-scroll pb-2">
+        <Table className="w-max text-xs" style={{ minWidth: `${tableMinWidth}px` }}>
           <THead>
             <TR>
               <TH rowSpan={2} className="w-[72px] whitespace-nowrap">Rank</TH>
