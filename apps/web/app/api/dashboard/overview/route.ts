@@ -22,20 +22,13 @@ export async function GET(req: NextRequest) {
     ? DateTime.fromISO(at, { zone: "utc" })
     : DateTime.now().toUTC();
 
-  const [pricesRes, relationRes, cmeRes, jobsRes, cmeDeltaRes] = await Promise.all([
+  const [pricesRes, cmeRes, jobsRes, cmeDeltaRes] = await Promise.all([
     adminDb
       .from("price_ticks")
       .select("symbol,price,event_time_utc,event_time_bkk")
       .lte("event_time_utc", anchor.toISO())
       .order("event_time_utc", { ascending: false })
       .limit(PRICE_LOOKBACK_ROWS),
-    adminDb
-      .from("relation_snapshots_30m")
-      .select("*")
-      .lte("anchor_time_utc", anchor.toISO())
-      .order("anchor_time_utc", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
     adminDb
       .from("cme_snapshots")
       .select("*")
@@ -115,7 +108,7 @@ export async function GET(req: NextRequest) {
         minute_pct_change: pct(item.price ?? null, prev?.price ?? null)
       };
     }),
-    relation: relationRes.data,
+    relation: null,
     cme_snapshots: cmeRes.data || [],
     top_actives: topActives,
     cme_deltas: cmeDeltaRes.data || [],

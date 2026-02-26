@@ -18,6 +18,7 @@ export const config = {
   webhookMaxBodyBytes: Number(process.env.WEBHOOK_MAX_BODY_BYTES || "16384"),
   webhookRequireSignature: (process.env.WEBHOOK_REQUIRE_SIGNATURE || "false") === "true",
   webhookAllowBodySecretFallback: (process.env.WEBHOOK_ALLOW_BODY_SECRET_FALLBACK || "true") === "true",
+  relationEnabled: (process.env.RELATION_ENABLED || "false") === "true",
   runNowCooldownSeconds: Number(process.env.RUN_NOW_COOLDOWN_SECONDS || "20"),
   cmeLinkUpdateCooldownSeconds: Number(process.env.CME_LINK_UPDATE_COOLDOWN_SECONDS || "20"),
   authSessionRateLimitPerMinute: Number(process.env.AUTH_SESSION_RATE_LIMIT_PER_MINUTE || "30"),

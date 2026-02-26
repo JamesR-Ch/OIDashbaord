@@ -44,6 +44,7 @@ export const workerConfig = {
   supabaseServiceRole: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
   controlPort: Number(process.env.PORT || process.env.WORKER_CONTROL_PORT || "4100"),
   controlSecret: process.env.WORKER_CONTROL_SECRET || "",
+  relationEnabled: (process.env.RELATION_ENABLED || "false") === "true",
   cmeSessionTimezone: process.env.CME_SESSION_TIMEZONE || "America/Chicago",
   cmeHolidayClosures: (process.env.CME_HOLIDAY_CLOSURES || "")
     .split(",")

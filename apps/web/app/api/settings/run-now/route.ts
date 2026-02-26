@@ -7,7 +7,7 @@ import { DateTime } from "luxon";
 import { checkRateLimit } from "../../../../lib/rate-limit";
 
 const payloadSchema = z.object({
-  job: z.enum(["relation", "cme", "both"])
+  job: z.enum(["cme"])
 });
 
 function getClientIp(req: NextRequest): string {
@@ -60,12 +60,7 @@ export async function POST(req: NextRequest) {
 
   const adminDb = getAdminDb();
   const cooldownStart = DateTime.utc().minus({ minutes: config.runNowCooldownSeconds / 60 }).toISO();
-  const recentNames =
-    parsed.data.job === "both"
-      ? ["relation_30m", "cme_30m"]
-      : parsed.data.job === "relation"
-        ? ["relation_30m"]
-        : ["cme_30m"];
+  const recentNames = ["cme_30m"];
 
   const { data: recentRuns, error: recentError } = await adminDb
     .from("job_runs")

@@ -149,18 +149,20 @@ export async function GET(req: NextRequest) {
     return Math.max(0, Math.round((nowMs - ms) / 60000));
   }
 
-  const relationLatest = latestByJob.get("relation_30m");
+  const relationEnabled = config.relationEnabled;
+  const relationLatest = relationEnabled ? latestByJob.get("relation_30m") : undefined;
   const cmeLatest = latestByJob.get("cme_30m");
   const relationAgeMin = ageMinutes(relationLatest?.started_at);
   const cmeAgeMin = ageMinutes(cmeLatest?.started_at);
 
   const alerts = {
-    relation_stale: relationAgeMin == null ? true : relationAgeMin > 35,
+    relation_stale: relationEnabled ? (relationAgeMin == null ? true : relationAgeMin > 35) : false,
     cme_stale: cmeAgeMin == null ? true : cmeAgeMin > 35,
-    relation_last_status: relationLatest?.status || null,
+    relation_last_status: relationEnabled ? relationLatest?.status || null : "disabled",
     cme_last_status: cmeLatest?.status || null,
-    relation_age_min: relationAgeMin,
-    cme_age_min: cmeAgeMin
+    relation_age_min: relationEnabled ? relationAgeMin : null,
+    cme_age_min: cmeAgeMin,
+    relation_skip_reason: relationEnabled ? null : "relation_disabled"
   };
 
   let workerHealth: {
@@ -219,7 +221,7 @@ export async function GET(req: NextRequest) {
   const alertEvents: AlertEvent[] = [];
   const pushAlert = (event: AlertEvent) => alertEvents.push(event);
 
-  if (alerts.relation_last_status === "failed") {
+  if (relationEnabled && alerts.relation_last_status === "failed") {
     pushAlert({
       key: "relation_failed",
       severity: "critical",
@@ -239,7 +241,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  if (alerts.relation_stale) {
+  if (relationEnabled && alerts.relation_stale) {
     pushAlert({
       key: "relation_stale",
       severity: "warning",

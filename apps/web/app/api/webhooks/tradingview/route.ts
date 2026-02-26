@@ -5,6 +5,7 @@ import { getAdminDb } from "../../../../lib/db";
 import { verifyHmacSha256 } from "../../../../lib/signature";
 import { DateTime } from "luxon";
 import crypto from "node:crypto";
+import { getDashboardMarketStatus } from "../../../../lib/market-status";
 
 function normalizeSymbol(input: string): "XAUUSD" | "THBUSD" | "BTCUSD" | null {
   const upper = input.toUpperCase().trim();
@@ -149,6 +150,27 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 }
     );
+  }
+
+  const marketStatus = getDashboardMarketStatus(nowUtc);
+  const symbolSession =
+    normalizedSymbol === "XAUUSD"
+      ? marketStatus.xauusd
+      : normalizedSymbol === "THBUSD"
+        ? marketStatus.thbusd
+        : { open: true, reason: "crypto_24_7", session_time_utc: nowUtc.toISO() };
+  if (!symbolSession.open) {
+    await logWebhookRequest(adminDb, {
+      ip: clientIp,
+      status_code: 200,
+      note: `market_closed_skip_${normalizedSymbol}_${symbolSession.reason}`
+    });
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      symbol: normalizedSymbol,
+      reason: symbolSession.reason
+    });
   }
 
   const minuteBucketUtc = utc.startOf("minute");

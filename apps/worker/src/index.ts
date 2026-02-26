@@ -9,6 +9,7 @@ import { isSymbolMarketOpen } from "./services/cme-gates";
 
 logger.info(
   {
+    relationEnabled: workerConfig.relationEnabled,
     relationCron: workerConfig.relationCron,
     cmeCron: workerConfig.cmeCron,
     retentionCron: workerConfig.retentionCron,
@@ -64,6 +65,24 @@ async function markSkippedOverlap(jobName: ManagedJob, source: "cron" | "run_now
   }
 }
 
+async function markSkippedDisabledRelation(source: "cron" | "run_now") {
+  try {
+    const now = DateTime.utc().toISO();
+    await db.from("job_runs").insert({
+      job_name: "relation_30m",
+      status: "skipped",
+      started_at: now,
+      finished_at: now,
+      metadata: {
+        reason: "relation_disabled",
+        source
+      }
+    });
+  } catch (error) {
+    logger.warn({ err: error, source }, "failed to write relation disabled skip record");
+  }
+}
+
 async function runManagedJob(
   jobName: ManagedJob,
   source: "cron" | "run_now",
@@ -90,18 +109,27 @@ async function runNow(job: RunNowJob) {
   }
   const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
   if (job === "relation" || job === "both") {
-    await runManagedJob("relation_30m", "run_now", () => runRelation(anchor));
+    if (workerConfig.relationEnabled) {
+      await runManagedJob("relation_30m", "run_now", () => runRelation(anchor));
+    } else {
+      logger.info({ job }, "relation run requested but relation is disabled");
+      await markSkippedDisabledRelation("run_now");
+    }
   }
   if (job === "cme" || job === "both") {
     await runManagedJob("cme_30m", "run_now", () => runCme(anchor));
   }
 }
 
-cron.schedule(workerConfig.relationCron, async () => {
-  if (recycleRequested) return;
-  const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
-  await runManagedJob("relation_30m", "cron", () => runRelation(anchor));
-}, { timezone: BKK_ZONE });
+if (workerConfig.relationEnabled) {
+  cron.schedule(workerConfig.relationCron, async () => {
+    if (recycleRequested) return;
+    const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
+    await runManagedJob("relation_30m", "cron", () => runRelation(anchor));
+  }, { timezone: BKK_ZONE });
+} else {
+  logger.info("relation scheduler disabled (RELATION_ENABLED=false)");
+}
 
 cron.schedule(workerConfig.cmeCron, async () => {
   if (recycleRequested) return;
@@ -170,7 +198,7 @@ const server = http.createServer(async (req, res) => {
         return Math.max(0, Math.round((nowMs - ms) / 60000));
       };
 
-      const relationLatest = latestByJob.get("relation_30m");
+      const relationLatest = workerConfig.relationEnabled ? latestByJob.get("relation_30m") : null;
       const cmeLatest = latestByJob.get("cme_30m");
       const relationAgeMin = ageMin(relationLatest?.started_at);
       const cmeAgeMin = ageMin(cmeLatest?.started_at);
@@ -183,17 +211,19 @@ const server = http.createServer(async (req, res) => {
         cmeLatest?.status === "skipped" &&
         cmeSkipReason === "cme_session_closed";
       const alerts = {
-        relation_stale: relationMarketClosedSkip
+        relation_stale: !workerConfig.relationEnabled
+          ? false
+          : relationMarketClosedSkip
           ? false
           : relationAgeMin == null ? true : relationAgeMin > workerConfig.relationStaleMinutes,
         cme_stale: cmeMarketClosedSkip
           ? false
           : cmeAgeMin == null ? true : cmeAgeMin > workerConfig.cmeStaleMinutes,
-        relation_age_min: relationAgeMin,
+        relation_age_min: workerConfig.relationEnabled ? relationAgeMin : null,
         cme_age_min: cmeAgeMin,
-        relation_last_status: relationLatest?.status || null,
+        relation_last_status: workerConfig.relationEnabled ? relationLatest?.status || null : "disabled",
         cme_last_status: cmeLatest?.status || null,
-        relation_skip_reason: relationSkipReason || null,
+        relation_skip_reason: workerConfig.relationEnabled ? relationSkipReason || null : "relation_disabled",
         cme_skip_reason: cmeSkipReason || null
       };
       const symbolSessions = SYMBOLS.map((symbol) => ({
@@ -211,6 +241,7 @@ const server = http.createServer(async (req, res) => {
           max_uptime_hours: workerConfig.maxUptimeHours,
           latest_jobs: Array.from(latestByJob.values()),
           alerts,
+          relation_enabled: workerConfig.relationEnabled,
           symbol_sessions: symbolSessions,
           symbol_session_modes: workerConfig.symbolSessionModes
         })

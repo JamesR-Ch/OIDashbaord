@@ -60,13 +60,9 @@ interface WorkerHealthState {
 }
 
 interface AlertsState {
-  relation_stale: boolean;
   cme_stale: boolean;
-  relation_last_status: string | null;
   cme_last_status: string | null;
-  relation_age_min: number | null;
   cme_age_min: number | null;
-  relation_skip_reason?: string | null;
   cme_skip_reason?: string | null;
 }
 
@@ -124,7 +120,7 @@ export default function SettingsPage() {
   const [authSecurity, setAuthSecurity] = useState<AuthSecurityState | null>(null);
   const [message, setMessage] = useState("");
   const [runNowMessage, setRunNowMessage] = useState("");
-  const [runningJob, setRunningJob] = useState<"relation" | "cme" | "both" | "">("");
+  const [runningJob, setRunningJob] = useState<"cme" | "">("");
   const [accessState, setAccessState] = useState<AccessState>("ok");
   const [accessMessage, setAccessMessage] = useState("");
   const currentRequestRef = useRef<Promise<void> | null>(null);
@@ -243,7 +239,7 @@ export default function SettingsPage() {
     loadSystemStatus();
   }
 
-  async function runNow(job: "relation" | "cme" | "both") {
+  async function runNow(job: "cme") {
     setRunningJob(job);
     setRunNowMessage(`running ${job}...`);
 
@@ -323,19 +319,12 @@ export default function SettingsPage() {
 
         <AnalyticsPanel title="Run Controls" subtitle="Admin only. Trigger worker jobs with current session cookie.">
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("relation")}>Run Relation Now</Button>
             <Button variant="secondary" disabled={runningJob !== ""} onClick={() => runNow("cme")}>Run CME Now</Button>
-            <Button disabled={runningJob !== ""} onClick={() => runNow("both")}>Run Both Now</Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{runNowMessage}</p>
 
           {alerts ? (
-            <div className="mt-4 grid gap-2 text-xs md:grid-cols-2">
-              <StateBlock
-                title={`Relation ${alerts.relation_stale ? "stale" : "ok"}`}
-                detail={`age=${alerts.relation_age_min ?? "-"}m · status=${alerts.relation_last_status || "-"}`}
-                tone={alerts.relation_stale ? "warning" : "success"}
-              />
+            <div className="mt-4 grid gap-2 text-xs md:grid-cols-1">
               <StateBlock
                 title={`CME ${alerts.cme_stale ? "stale" : "ok"}`}
                 detail={`age=${alerts.cme_age_min ?? "-"}m · status=${alerts.cme_last_status || "-"}`}

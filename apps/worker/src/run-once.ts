@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { runCmeExtractionJob } from "./jobs/cme-job";
 import { runRelationJob } from "./jobs/relation-job";
 import { runRetentionJob } from "./jobs/retention-job";
+import { workerConfig } from "./lib/config";
 import { logger } from "./services/logger";
 
 type JobArg = "relation" | "cme" | "retention" | "all";
@@ -13,7 +14,11 @@ async function main() {
   logger.info({ arg, anchor: anchor.toISO() }, "run-once start");
 
   if (arg === "relation" || arg === "all") {
-    await runRelationJob(anchor);
+    if (workerConfig.relationEnabled) {
+      await runRelationJob(anchor);
+    } else {
+      logger.info("relation run-once skipped (RELATION_ENABLED=false)");
+    }
   }
 
   if (arg === "cme" || arg === "all") {
