@@ -85,7 +85,7 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
 
   return (
     <main className="min-h-screen bg-transparent text-foreground">
-      <div className="app-canvas grid min-h-screen grid-cols-1 md:grid-cols-[278px_1fr]">
+      <div className="app-canvas grid min-h-screen grid-cols-1 md:grid-cols-[278px_minmax(0,1fr)]">
         <aside className="hidden border-r border-border bg-panel p-6 md:block">
           <SidebarNav
             pathname={pathname}
@@ -95,7 +95,7 @@ export function DashboardShell({ children, status }: DashboardShellProps) {
           />
         </aside>
 
-        <div className="px-3 pb-7 pt-3 md:px-6 md:pb-10 md:pt-4">
+        <div className="min-w-0 px-3 pb-7 pt-3 md:px-6 md:pb-10 md:pt-4">
           <TopRail
             nowUtc={now?.utc || "UTC --:--:--"}
             nowBkk={now?.bkk || "BKK --:--:--"}

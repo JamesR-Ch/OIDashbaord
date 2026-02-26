@@ -4,7 +4,7 @@ import { DateTime } from "luxon";
 import { getDashboardMarketStatus } from "../../../../lib/market-status";
 
 const PRICE_LOOKBACK_ROWS = 36;
-const CME_SNAPSHOT_LOOKBACK_ROWS = 12;
+const CME_SNAPSHOT_LOOKBACK_ROWS = 48;
 
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();

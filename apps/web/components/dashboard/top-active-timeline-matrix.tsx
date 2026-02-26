@@ -2,6 +2,8 @@ import { fmtDateTimeShort } from "../../lib/format";
 import { CmeSnapshotVM, CmeTopActiveVM } from "../../lib/view-models";
 import { Table, TBody, TD, TH, THead, TR } from "../ui/table";
 
+const MAX_TIMELINE_SETS = 8;
+
 function renderViewMatrix(
   viewType: "intraday" | "oi",
   snapshots: CmeSnapshotVM[],
@@ -13,7 +15,8 @@ function renderViewMatrix(
   const latestSeries = byView[0]?.series_name ?? null;
   const timeline = byView
     .filter((s) => (latestSeries ? s.series_name === latestSeries : true))
-    .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
+    .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime())
+    .slice(-MAX_TIMELINE_SETS);
   const tableMinWidth = Math.max(1600, 220 + timeline.length * 320);
 
   const activeBySnapshot = new Map<string, CmeTopActiveVM[]>();
@@ -30,7 +33,7 @@ function renderViewMatrix(
       <p className="text-xs text-foreground/88">
         Type: {viewType === "intraday" ? "Intraday" : "OI"}{latestSeries ? ` · Series ${latestSeries}` : ""}
       </p>
-      <div className="table-shell timeline-scroll w-full overflow-x-scroll pb-2">
+      <div className="table-shell timeline-scroll w-full max-w-full overflow-x-scroll pb-2">
         <Table className="w-max text-xs" style={{ minWidth: `${tableMinWidth}px` }}>
           <THead>
             <TR>

@@ -13,7 +13,7 @@ export function AnalyticsPanel({
   children: ReactNode;
 }) {
   return (
-    <Card className="surface-panel bg-panel/95">
+    <Card className="surface-panel min-w-0 bg-panel/95">
       <CardHeader className="space-y-1.5">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
@@ -23,7 +23,7 @@ export function AnalyticsPanel({
           {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">{children}</CardContent>
+      <CardContent className="min-w-0 space-y-4">{children}</CardContent>
     </Card>
   );
 }
