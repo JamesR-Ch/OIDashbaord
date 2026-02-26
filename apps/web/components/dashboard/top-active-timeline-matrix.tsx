@@ -7,8 +7,12 @@ function renderViewMatrix(
   snapshots: CmeSnapshotVM[],
   topActives: CmeTopActiveVM[]
 ) {
-  const timeline = snapshots
+  const byView = snapshots
     .filter((s) => s.view_type === viewType)
+    .sort((a, b) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime());
+  const latestSeries = byView[0]?.series_name ?? null;
+  const timeline = byView
+    .filter((s) => (latestSeries ? s.series_name === latestSeries : true))
     .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime());
 
   const activeBySnapshot = new Map<string, CmeTopActiveVM[]>();
@@ -22,7 +26,9 @@ function renderViewMatrix(
 
   return (
     <div className="space-y-1.5">
-      <p className="text-xs text-foreground/88">Type: {viewType === "intraday" ? "Intraday" : "OI"}</p>
+      <p className="text-xs text-foreground/88">
+        Type: {viewType === "intraday" ? "Intraday" : "OI"}{latestSeries ? ` · Series ${latestSeries}` : ""}
+      </p>
       <div className="table-shell w-full overflow-x-scroll pb-2">
         <Table className="min-w-[1200px] w-max text-xs">
           <THead>
@@ -59,13 +65,30 @@ function renderViewMatrix(
                     <TD key={`cell-${viewType}-${snap.id}-${rank}`} colSpan={2} className="border-border text-xs">
                       <div className="grid grid-cols-2 gap-3">
                         <span className="whitespace-nowrap">{item ? item.strike : "-"}</span>
-                        <span className="whitespace-nowrap">{item ? `${item.put} / ${item.call} / ${item.total}` : "-"}</span>
+                        {item ? (
+                          <span className="whitespace-nowrap">
+                            <span className="text-signal-down">{item.put}</span>
+                            {" / "}
+                            <span className="text-signal-up">{item.call}</span>
+                            {" / "}
+                            <strong className="font-semibold text-foreground">{item.total}</strong>
+                          </span>
+                        ) : (
+                          <span className="whitespace-nowrap">-</span>
+                        )}
                       </div>
                     </TD>
                   );
                 })}
               </TR>
             ))}
+            {timeline.length === 0 ? (
+              <TR>
+                <TD colSpan={1 + Math.max(1, timeline.length) * 2}>
+                  No timeline rows for current {viewType} series.
+                </TD>
+              </TR>
+            ) : null}
           </TBody>
         </Table>
       </div>

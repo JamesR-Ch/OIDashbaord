@@ -8,6 +8,7 @@ import { KpiCard } from "../../components/dashboard/kpi-card";
 import { RatioBar } from "../../components/dashboard/ratio-bar";
 import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
+import { TopActiveTimelineMatrix } from "../../components/dashboard/top-active-timeline-matrix";
 import { PageSection } from "../../components/layout/page-section";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtDateTimeShort, fmtNum } from "../../lib/format";
@@ -116,6 +117,16 @@ export default function OverviewPage() {
               <StateBlock title="No CME snapshots" detail="Wait for scheduler or run CME manually in settings." />
             ) : null}
           </div>
+        </AnalyticsPanel>
+      </PageSection>
+
+      <PageSection>
+        <AnalyticsPanel
+          title="Top Active Timeline"
+          subtitle="Recent snapshots over time (same series by view)"
+          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
+        >
+          <TopActiveTimelineMatrix snapshots={vm.cmeSnapshots.slice(0, 12)} topActives={vm.topActives} />
         </AnalyticsPanel>
       </PageSection>
       </div>

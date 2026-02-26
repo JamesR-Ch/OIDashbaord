@@ -9,7 +9,6 @@ import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
 import { PageSection } from "../../components/layout/page-section";
 import { StateBlock } from "../../components/dashboard/state-block";
-import { TopActiveTimelineMatrix } from "../../components/dashboard/top-active-timeline-matrix";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtNum } from "../../lib/format";
 import { classifyPcr, toCmeViewModel, toneFromNumber } from "../../lib/view-models";
@@ -164,16 +163,6 @@ export default function CmePage() {
               );
             })}
           </div>
-        </AnalyticsPanel>
-      </PageSection>
-
-      <PageSection>
-        <AnalyticsPanel
-          title="Top Active Timeline"
-          subtitle="Recent snapshots over time (scroll horizontally)"
-          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
-        >
-          <TopActiveTimelineMatrix snapshots={vm.snapshots.slice(0, 12)} topActives={vm.topActives} />
         </AnalyticsPanel>
       </PageSection>
       </div>
