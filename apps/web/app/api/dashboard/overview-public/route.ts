@@ -4,7 +4,8 @@ import { DateTime } from "luxon";
 import { getDashboardMarketStatus } from "../../../../lib/market-status";
 
 const PRICE_LOOKBACK_ROWS = 36;
-const CME_SNAPSHOT_LOOKBACK_ROWS = 48;
+const CME_SNAPSHOT_LOOKBACK_ROWS = 6;
+const CME_TIMELINE_MAX_SETS = 8;
 
 export async function GET(req: NextRequest) {
   const adminDb = getAdminDb();
@@ -32,7 +33,32 @@ export async function GET(req: NextRequest) {
       .limit(4)
   ]);
 
-  const snapshotIds = (cmeRes.data || []).map((row) => row.id);
+  const latestByView = new Map<"intraday" | "oi", any>();
+  for (const row of cmeRes.data || []) {
+    if ((row.view_type === "intraday" || row.view_type === "oi") && !latestByView.has(row.view_type)) {
+      latestByView.set(row.view_type, row);
+    }
+  }
+
+  const timelineGroups = await Promise.all(
+    Array.from(latestByView.values()).map(async (latest) => {
+      const { data } = await adminDb
+        .from("cme_snapshots")
+        .select("*")
+        .eq("view_type", latest.view_type)
+        .eq("trade_date_bkk", latest.trade_date_bkk)
+        .eq("series_name", latest.series_name)
+        .lte("snapshot_time_utc", anchor.toISO())
+        .order("snapshot_time_utc", { ascending: false })
+        .limit(CME_TIMELINE_MAX_SETS);
+      return data || [];
+    })
+  );
+  const cmeTimelineSnapshots = timelineGroups.flat();
+
+  const snapshotIds = Array.from(
+    new Set([...(cmeRes.data || []).map((row) => row.id), ...cmeTimelineSnapshots.map((row) => row.id)])
+  );
   let topActives: Array<{
     snapshot_id: string;
     rank: number;
@@ -96,6 +122,7 @@ export async function GET(req: NextRequest) {
     }),
     relation: null,
     cme_snapshots: cmeRes.data || [],
+    cme_timeline_snapshots: cmeTimelineSnapshots,
     top_actives: topActives,
     cme_deltas: cmeDeltaRes.data || [],
     cme_top_strike_changes: topStrikeChanges,

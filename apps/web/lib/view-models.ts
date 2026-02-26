@@ -155,6 +155,7 @@ export interface OverviewViewModel {
   prices: OverviewPriceVM[];
   relation: RelationSnapshotVM | null;
   cmeSnapshots: CmeSnapshotVM[];
+  cmeTimelineSnapshots: CmeSnapshotVM[];
   cmeDeltas: CmeDeltaVM[];
   cmeTopStrikeChanges: CmeTopStrikeChangeVM[];
   topActives: CmeTopActiveVM[];
@@ -163,6 +164,7 @@ export interface OverviewViewModel {
 
 export interface CmeViewModel {
   snapshots: CmeSnapshotVM[];
+  timelineSnapshots: CmeSnapshotVM[];
   topActives: CmeTopActiveVM[];
   deltas: CmeDeltaVM[];
   topStrikeChanges: CmeTopStrikeChangeVM[];
@@ -226,6 +228,7 @@ export function toOverviewViewModel(raw: any): OverviewViewModel {
     prices: asArray<OverviewPriceVM>(raw?.prices),
     relation: (raw?.relation as RelationSnapshotVM | null) || null,
     cmeSnapshots: asArray<CmeSnapshotVM>(raw?.cme_snapshots),
+    cmeTimelineSnapshots: asArray<CmeSnapshotVM>(raw?.cme_timeline_snapshots),
     cmeDeltas: asArray<CmeDeltaVM>(raw?.cme_deltas),
     cmeTopStrikeChanges: asArray<CmeTopStrikeChangeVM>(raw?.cme_top_strike_changes),
     topActives: asArray<CmeTopActiveVM>(raw?.top_actives),
@@ -236,6 +239,7 @@ export function toOverviewViewModel(raw: any): OverviewViewModel {
 export function toCmeViewModel(raw: any): CmeViewModel {
   return {
     snapshots: asArray<CmeSnapshotVM>(raw?.cme_snapshots),
+    timelineSnapshots: asArray<CmeSnapshotVM>(raw?.cme_timeline_snapshots),
     topActives: asArray<CmeTopActiveVM>(raw?.top_actives),
     deltas: asArray<CmeDeltaVM>(raw?.cme_deltas),
     topStrikeChanges: asArray<CmeTopStrikeChangeVM>(raw?.cme_top_strike_changes),

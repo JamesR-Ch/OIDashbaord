@@ -126,7 +126,10 @@ export default function OverviewPage() {
           subtitle="Recent snapshots over time (same series by view)"
           rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
         >
-          <TopActiveTimelineMatrix snapshots={vm.cmeSnapshots.slice(0, 12)} topActives={vm.topActives} />
+          <TopActiveTimelineMatrix
+            snapshots={vm.cmeTimelineSnapshots.length ? vm.cmeTimelineSnapshots : vm.cmeSnapshots}
+            topActives={vm.topActives}
+          />
         </AnalyticsPanel>
       </PageSection>
       </div>

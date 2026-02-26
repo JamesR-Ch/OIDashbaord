@@ -17,7 +17,7 @@ function renderViewMatrix(
     .filter((s) => (latestSeries ? s.series_name === latestSeries : true))
     .sort((a, b) => new Date(a.snapshot_time_bkk).getTime() - new Date(b.snapshot_time_bkk).getTime())
     .slice(-MAX_TIMELINE_SETS);
-  const tableMinWidth = Math.max(1600, 220 + timeline.length * 320);
+  const tableMinWidth = Math.max(1400, 220 + timeline.length * 280);
 
   const activeBySnapshot = new Map<string, CmeTopActiveVM[]>();
   for (const row of topActives) {
