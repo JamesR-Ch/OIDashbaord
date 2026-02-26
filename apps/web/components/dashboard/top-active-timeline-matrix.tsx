@@ -23,13 +23,13 @@ function renderViewMatrix(
   return (
     <div className="space-y-1.5">
       <p className="text-xs text-foreground/88">Type: {viewType === "intraday" ? "Intraday" : "OI"}</p>
-      <div className="table-shell pb-1">
-        <Table className="min-w-[980px] text-xs">
+      <div className="table-shell w-full overflow-x-scroll pb-2">
+        <Table className="min-w-[1200px] w-max text-xs">
           <THead>
             <TR>
-              <TH rowSpan={2} className="w-[72px]">Rank</TH>
+              <TH rowSpan={2} className="w-[72px] whitespace-nowrap">Rank</TH>
               {timeline.map((snap) => (
-                <TH key={`time-${viewType}-${snap.id}`} colSpan={2} className="text-center">
+                <TH key={`time-${viewType}-${snap.id}`} colSpan={2} className="text-center whitespace-nowrap">
                   BKK Time: {fmtDateTimeShort(snap.snapshot_time_bkk)}
                 </TH>
               ))}
@@ -39,11 +39,11 @@ function renderViewMatrix(
                 <TH
                   key={`sub-${viewType}-${snap.id}`}
                   colSpan={2}
-                  className="border-b border-border px-3 py-2 text-left"
+                  className="border-b border-border px-3 py-2 text-left whitespace-nowrap"
                 >
                   <div className="grid grid-cols-2 gap-3">
                     <span>Strikes</span>
-                    <span>Put / Call / Total</span>
+                    <span className="whitespace-nowrap">Put / Call / Total</span>
                   </div>
                 </TH>
               ))}
@@ -58,8 +58,8 @@ function renderViewMatrix(
                   return (
                     <TD key={`cell-${viewType}-${snap.id}-${rank}`} colSpan={2} className="border-border text-xs">
                       <div className="grid grid-cols-2 gap-3">
-                        <span>{item ? item.strike : "-"}</span>
-                        <span>{item ? `${item.put} / ${item.call} / ${item.total}` : "-"}</span>
+                        <span className="whitespace-nowrap">{item ? item.strike : "-"}</span>
+                        <span className="whitespace-nowrap">{item ? `${item.put} / ${item.call} / ${item.total}` : "-"}</span>
                       </div>
                     </TD>
                   );

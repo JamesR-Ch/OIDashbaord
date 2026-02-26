@@ -4,12 +4,10 @@ import { AppShell } from "../../components/layout/app-shell";
 import { StateBlock } from "../../components/dashboard/state-block";
 import { PageHeader } from "../../components/layout/page-header";
 import { AnalyticsPanel } from "../../components/dashboard/analytics-panel";
-import { DecisionTable, TBody, TD, TH, THead, TR } from "../../components/dashboard/decision-table";
 import { KpiCard } from "../../components/dashboard/kpi-card";
 import { RatioBar } from "../../components/dashboard/ratio-bar";
 import { SignalChip } from "../../components/dashboard/signal-chip";
 import { ErrorState, LoadingState } from "../../components/dashboard/states";
-import { TopActiveTimelineMatrix } from "../../components/dashboard/top-active-timeline-matrix";
 import { PageSection } from "../../components/layout/page-section";
 import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtDateTimeShort, fmtNum } from "../../lib/format";
@@ -32,17 +30,6 @@ export default function OverviewPage() {
   const structureSnapshots = [intraday, oi].filter((s): s is NonNullable<typeof s> => Boolean(s));
 
   const symbols = ["XAUUSD", "THBUSD", "BTCUSD"];
-
-  const latestDeltaByView = new Map<string, typeof vm.cmeDeltas[number]>();
-  const sortedDeltas = [...vm.cmeDeltas].sort((a, b) => new Date(b.snapshot_time_bkk).getTime() - new Date(a.snapshot_time_bkk).getTime());
-  for (const d of sortedDeltas) if (!latestDeltaByView.has(d.view_type)) latestDeltaByView.set(d.view_type, d);
-
-  const topActivesBySnapshot = new Map<string, typeof vm.topActives>();
-  for (const row of vm.topActives) {
-    const arr = topActivesBySnapshot.get(row.snapshot_id) || [];
-    arr.push(row);
-    topActivesBySnapshot.set(row.snapshot_id, arr);
-  }
 
   const pricesBySymbol = new Map(vm.prices.map((p) => [p.symbol, p]));
   const cmeMarketOpen = vm.marketStatus?.cme_gold?.open;
@@ -128,94 +115,6 @@ export default function OverviewPage() {
             {!intraday && !oi ? (
               <StateBlock title="No CME snapshots" detail="Wait for scheduler or run CME manually in settings." />
             ) : null}
-          </div>
-        </AnalyticsPanel>
-      </PageSection>
-
-      <PageSection className="lg:grid-cols-[1fr_1.15fr]">
-        <AnalyticsPanel
-          title="Top Active Strikes"
-          subtitle="Latest top 3 plus timeline history"
-          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
-        >
-          <div className="space-y-4">
-            {vm.cmeSnapshots.slice(0, 2).map((snap) => {
-              const rows = (topActivesBySnapshot.get(snap.id) || []).sort((a, b) => a.rank - b.rank);
-              return (
-                <div key={snap.id}>
-                  <p className="mb-1.5 text-xs text-muted-foreground">{snap.view_type.toUpperCase()} · {snap.series_name} · {fmtDateTime(snap.snapshot_time_bkk)}</p>
-                  <DecisionTable>
-                    <THead>
-                      <TR>
-                        <TH>Strike</TH>
-                        <TH>Put</TH>
-                        <TH>Call</TH>
-                        <TH>Total</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {rows.map((r) => (
-                        <TR key={`${snap.id}-${r.rank}`}>
-                          <TD>{r.strike}</TD>
-                          <TD className="text-signal-down">{r.put}</TD>
-                          <TD className="text-signal-up">{r.call}</TD>
-                          <TD>{r.total}</TD>
-                        </TR>
-                      ))}
-                    </TBody>
-                  </DecisionTable>
-                </div>
-              );
-            })}
-
-            <div>
-              <p className="mb-1.5 text-xs text-muted-foreground">Timeline (recent snapshots)</p>
-              <TopActiveTimelineMatrix snapshots={vm.cmeSnapshots.slice(0, 12)} topActives={vm.topActives} />
-            </div>
-          </div>
-        </AnalyticsPanel>
-
-        <AnalyticsPanel
-          title="Latest CME Strike Changes"
-          subtitle="Current vs previous snapshot (same series)"
-          rightSlot={<SignalChip label={cmeMarketLabel} tone={cmeMarketTone} />}
-        >
-          <div className="space-y-4">
-            {[...latestDeltaByView.values()].map((delta) => {
-              const rows = vm.cmeTopStrikeChanges.filter((r) => r.delta_id === delta.id).sort((a, b) => a.rank - b.rank);
-              return (
-                <div key={delta.id} className="rounded-lg border border-border bg-elevated/45 p-3">
-                  <div className="mb-2 flex items-center justify-between text-xs">
-                    <span>{delta.view_type.toUpperCase()} · {delta.series_name}</span>
-                    <span className="text-muted-foreground">{fmtDateTime(delta.snapshot_time_bkk)} vs {fmtDateTime(delta.previous_snapshot_time_bkk)}</span>
-                  </div>
-                  <DecisionTable>
-                    <THead>
-                      <TR>
-                        <TH>Rank</TH>
-                        <TH>Strike</TH>
-                        <TH>Put Δ</TH>
-                        <TH>Call Δ</TH>
-                        <TH>Total Δ</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {rows.length === 0 ? (
-                        <TR><TD colSpan={5}>No positive change rows.</TD></TR>
-                      ) : rows.map((r) => (
-                        <TR key={`${delta.id}-${r.rank}`}>
-                          <TD>{r.rank}</TD>
-                          <TD>{r.strike}</TD>
-                          <TD className={toneFromNumber(r.put_change) === "up" ? "text-signal-up" : toneFromNumber(r.put_change) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(r.put_change, 2)}</TD>
-                          <TD className={toneFromNumber(r.call_change) === "up" ? "text-signal-up" : toneFromNumber(r.call_change) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(r.call_change, 2)}</TD>
-                          <TD className={toneFromNumber(r.total_change) === "up" ? "text-signal-up" : toneFromNumber(r.total_change) === "down" ? "text-signal-down" : "text-signal-neutral"}>{fmtNum(r.total_change, 2)}</TD>
-                        </TR>
-                      ))}
-                    </TBody>
-                  </DecisionTable>
-                </div>
-              );
-            })}
           </div>
         </AnalyticsPanel>
       </PageSection>

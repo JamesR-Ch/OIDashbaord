@@ -60,10 +60,25 @@ body {
 
   .table-shell {
     @apply overflow-x-auto rounded-lg border border-border bg-elevated/45;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
   }
 
   .table-shell table {
     @apply min-w-full;
+  }
+
+  .table-shell::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .table-shell::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+
+  .table-shell::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   .metric-xl {
