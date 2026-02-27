@@ -39,6 +39,14 @@ function parseNonNegativeNumber(value: string | undefined, fallback: number): nu
   return n;
 }
 
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (!value) return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  return fallback;
+}
+
 export const workerConfig = {
   supabaseUrl: process.env.SUPABASE_URL || "",
   supabaseServiceRole: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "",
@@ -66,5 +74,6 @@ export const workerConfig = {
   authLockoutsRetentionDays: Number(process.env.AUTH_LOCKOUTS_RETENTION_DAYS || "30"),
   cmeSeriesLinksRetentionDays: Number(process.env.CME_SERIES_LINKS_RETENTION_DAYS || "90"),
   maxUptimeHours: parseNonNegativeNumber(process.env.WORKER_MAX_UPTIME_HOURS, 0),
+  maxUptimeRecycleEnabled: parseBoolean(process.env.WORKER_MAX_UPTIME_RECYCLE_ENABLED, false),
   symbolSessionModes: SYMBOL_SESSION_MODES
 };

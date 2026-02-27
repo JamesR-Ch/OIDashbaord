@@ -14,7 +14,8 @@ logger.info(
     cmeCron: workerConfig.cmeCron,
     retentionCron: workerConfig.retentionCron,
     controlPort: workerConfig.controlPort,
-    maxUptimeHours: workerConfig.maxUptimeHours
+    maxUptimeHours: workerConfig.maxUptimeHours,
+    maxUptimeRecycleEnabled: workerConfig.maxUptimeRecycleEnabled
   },
   "worker booting"
 );
@@ -42,6 +43,7 @@ async function runRetention() {
 }
 
 function maybeExitForRecycle() {
+  if (!workerConfig.maxUptimeRecycleEnabled) return;
   if (!recycleRequested || runningJobs.size > 0) return;
   logger.warn({ runningJobs: Array.from(runningJobs.values()) }, "worker recycling due to max uptime");
   setTimeout(() => process.exit(0), 250);
@@ -147,6 +149,13 @@ logger.info("worker schedulers registered");
 if (workerConfig.maxUptimeHours > 0) {
   const maxUptimeMs = Math.round(workerConfig.maxUptimeHours * 60 * 60 * 1000);
   setTimeout(() => {
+    if (!workerConfig.maxUptimeRecycleEnabled) {
+      logger.warn(
+        { maxUptimeHours: workerConfig.maxUptimeHours },
+        "max uptime reached; recycle disabled, worker remains up"
+      );
+      return;
+    }
     recycleRequested = true;
     logger.warn({ maxUptimeHours: workerConfig.maxUptimeHours }, "max uptime reached; recycle requested");
     maybeExitForRecycle();
@@ -239,6 +248,7 @@ const server = http.createServer(async (req, res) => {
           running_jobs: Array.from(runningJobs.values()),
           recycle_requested: recycleRequested,
           max_uptime_hours: workerConfig.maxUptimeHours,
+          max_uptime_recycle_enabled: workerConfig.maxUptimeRecycleEnabled,
           latest_jobs: Array.from(latestByJob.values()),
           alerts,
           relation_enabled: workerConfig.relationEnabled,
