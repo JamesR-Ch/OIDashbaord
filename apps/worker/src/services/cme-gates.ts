@@ -8,6 +8,13 @@ const FX_SESSION_ZONE = "America/New_York";
 const CET_MARKET_ZONE = "Europe/Berlin";
 
 export function getTradeDate(now = DateTime.now().setZone(BKK_ZONE)): string {
+  // Before 05:30 BKK the CME Chicago session is still running on the previous
+  // BKK calendar day's data. Returning yesterday keeps the already-saved link
+  // valid until the daily cutover instead of expiring it at midnight.
+  const minuteOfDay = now.hour * 60 + now.minute;
+  if (minuteOfDay < 5 * 60 + 30) {
+    return now.minus({ days: 1 }).toISODate() || "";
+  }
   return now.toISODate() || "";
 }
 
@@ -174,7 +181,7 @@ export async function isCmeJobAllowed(nowBkk = DateTime.now().setZone(BKK_ZONE))
     };
   }
 
-  const updatedAt = DateTime.fromISO(data.updated_at).setZone(BKK_ZONE);
+  const updatedAt = DateTime.fromISO(data.updated_at, { zone: "utc" }).setZone(BKK_ZONE);
   const cutover = nowBkk.set({ hour: 5, minute: 30, second: 0, millisecond: 0 });
 
   if (isAfterCutover(nowBkk) && updatedAt < cutover) {

@@ -13,8 +13,6 @@ import { useOverviewData } from "../../lib/use-overview-data";
 import { ageMinutes, fmtDateTime, fmtNum } from "../../lib/format";
 import { classifyPcr, toCmeViewModel, toneFromNumber } from "../../lib/view-models";
 
-export const dynamic = "force-dynamic";
-
 export default function CmePage() {
   const { data, loading, error } = useOverviewData();
   const vm = toCmeViewModel(data);

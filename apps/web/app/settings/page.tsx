@@ -12,6 +12,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { fmtDateTime } from "../../lib/format";
+import { getAccessToken } from "../../lib/auth-client";
 
 interface LinkState {
   trade_date_bkk: string;
@@ -126,6 +127,13 @@ export default function SettingsPage() {
   const currentRequestRef = useRef<Promise<void> | null>(null);
   const systemRequestRef = useRef<Promise<void> | null>(null);
 
+  async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
+    const token = await getAccessToken();
+    const headers: Record<string, string> = { ...(init.headers as Record<string, string> || {}) };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return fetch(input, { ...init, headers });
+  }
+
   const handleAccessStatus = useCallback((status: number, fallback: string, detail?: string) => {
     if (status === 401) {
       setAccessState("expired");
@@ -157,7 +165,7 @@ export default function SettingsPage() {
 
     const task = (async () => {
       try {
-        const res = await fetch("/api/settings/cme-link", { cache: "no-store", signal });
+        const res = await authFetch("/api/settings/cme-link", { cache: "no-store", signal });
         const json = await res.json().catch(() => ({}));
         const blocked = handleAccessStatus(res.status, "Unable to load latest CME link.", json.error);
         if (blocked) return;
@@ -185,7 +193,7 @@ export default function SettingsPage() {
 
     const task = (async () => {
       try {
-        const res = await fetch("/api/settings/system", { cache: "no-store", signal });
+        const res = await authFetch("/api/settings/system", { cache: "no-store", signal });
         const json = await res.json().catch(() => ({}));
         const blocked = handleAccessStatus(res.status, "Unable to load system telemetry.", json.error);
         if (blocked || !res.ok) return;
@@ -220,7 +228,7 @@ export default function SettingsPage() {
     e.preventDefault();
     setMessage("saving...");
 
-    const res = await fetch("/api/settings/cme-link", {
+    const res = await authFetch("/api/settings/cme-link", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url, effective_date_bkk: date })
@@ -243,7 +251,7 @@ export default function SettingsPage() {
     setRunningJob(job);
     setRunNowMessage(`running ${job}...`);
 
-    const res = await fetch("/api/settings/run-now", {
+    const res = await authFetch("/api/settings/run-now", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ job })

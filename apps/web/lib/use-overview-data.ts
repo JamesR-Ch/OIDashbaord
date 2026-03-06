@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getBrowserSupabaseClient } from "./supabase-browser";
 import { getDashboardMarketStatus } from "./market-status";
 
-const DEFAULT_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MS || "30000");
+const DEFAULT_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MS || "60000");
 const DEFAULT_HIDDEN_REFRESH_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_HIDDEN_MS || "180000");
 const DEFAULT_MAX_BACKOFF_MS = Number(process.env.NEXT_PUBLIC_DASHBOARD_POLL_MAX_BACKOFF_MS || "300000");
 const ENABLE_CLIENT_PUBLIC_READS = (process.env.NEXT_PUBLIC_PUBLIC_READS_CLIENT || "true") === "true";

@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
     return ((now - prev) / prev) * 100;
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     prices: Array.from(pricesBySymbol.entries()).map(([symbol, item]) => {
       const prev = secondPriceBySymbol.get(symbol) || null;
       const minuteAbsChange =
@@ -128,4 +128,6 @@ export async function GET(req: NextRequest) {
     cme_top_strike_changes: topStrikeChanges,
     market_status: getDashboardMarketStatus(anchor)
   });
+  response.headers.set("Cache-Control", "public, s-maxage=25, stale-while-revalidate=60");
+  return response;
 }

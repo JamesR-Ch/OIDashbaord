@@ -18,8 +18,6 @@ import {
   toneFromNumber
 } from "../../lib/view-models";
 
-export const dynamic = "force-dynamic";
-
 export default function OverviewPage() {
   const { data, loading, error } = useOverviewData();
   const vm = toOverviewViewModel(data);
