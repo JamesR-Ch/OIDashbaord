@@ -8,18 +8,18 @@ const FX_SESSION_ZONE = "America/New_York";
 const CET_MARKET_ZONE = "Europe/Berlin";
 
 export function getTradeDate(now = DateTime.now().setZone(BKK_ZONE)): string {
-  // Before 05:30 BKK the CME Chicago session is still running on the previous
+  // Before 04:30 BKK the CME Chicago session is still running on the previous
   // BKK calendar day's data. Returning yesterday keeps the already-saved link
   // valid until the daily cutover instead of expiring it at midnight.
   const minuteOfDay = now.hour * 60 + now.minute;
-  if (minuteOfDay < 5 * 60 + 30) {
+  if (minuteOfDay < 4 * 60 + 30) {
     return now.minus({ days: 1 }).toISODate() || "";
   }
   return now.toISODate() || "";
 }
 
 function isAfterCutover(now: DateTime): boolean {
-  const cutover = now.set({ hour: 5, minute: 30, second: 0, millisecond: 0 });
+  const cutover = now.set({ hour: 4, minute: 30, second: 0, millisecond: 0 });
   return now >= cutover;
 }
 
@@ -149,6 +149,21 @@ export async function isCmeJobAllowed(nowBkk = DateTime.now().setZone(BKK_ZONE))
     };
   }
 
+  // Block runs from 00:30 to 04:30 BKK. The midnight (00:00) run is the last
+  // valid one for the current series — after that the DTE rolls over and the
+  // series may change. Job resumes only after admin updates the link post-04:30.
+  const minuteOfDay = nowBkk.hour * 60 + nowBkk.minute;
+  if (minuteOfDay > 0 && minuteOfDay < 4 * 60 + 30) {
+    return {
+      allowed: false,
+      reason: "post_midnight_pre_cutover",
+      details: {
+        ...sessionState,
+        blocked_until_bkk: nowBkk.set({ hour: 4, minute: 30, second: 0, millisecond: 0 }).toISO()
+      }
+    };
+  }
+
   const tradeDate = getTradeDate(nowBkk);
   await expireOlderActiveLinks(tradeDate);
 
@@ -182,7 +197,7 @@ export async function isCmeJobAllowed(nowBkk = DateTime.now().setZone(BKK_ZONE))
   }
 
   const updatedAt = DateTime.fromISO(data.updated_at, { zone: "utc" }).setZone(BKK_ZONE);
-  const cutover = nowBkk.set({ hour: 5, minute: 30, second: 0, millisecond: 0 });
+  const cutover = nowBkk.set({ hour: 4, minute: 30, second: 0, millisecond: 0 });
 
   if (isAfterCutover(nowBkk) && updatedAt < cutover) {
     return {

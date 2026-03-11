@@ -285,7 +285,7 @@ export default function SettingsPage() {
 
       <div className="space-y-6 md:space-y-7">
       <PageSection className="xl:grid-cols-2">
-        <AnalyticsPanel title="Daily CME Link Update" subtitle="Admin only. Required after 05:30 GMT+7.">
+        <AnalyticsPanel title="Daily CME Link Update" subtitle="Admin only. Required after 04:30 GMT+7.">
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="trade_date">Trade Date (BKK)</Label>
