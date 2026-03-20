@@ -88,7 +88,8 @@ async function markSkippedDisabledRelation(source: "cron" | "run_now") {
 async function runManagedJob(
   jobName: ManagedJob,
   source: "cron" | "run_now",
-  fn: () => Promise<void>
+  fn: () => Promise<void>,
+  timeoutMs?: number
 ) {
   if (runningJobs.has(jobName)) {
     logger.warn({ jobName, source }, "job skipped due to overlap");
@@ -98,7 +99,34 @@ async function runManagedJob(
 
   runningJobs.add(jobName);
   try {
-    await fn();
+    if (timeoutMs && timeoutMs > 0) {
+      let timeoutHandle: ReturnType<typeof setTimeout>;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(
+          () => reject(new Error(`job_timeout_exceeded ms=${timeoutMs}`)),
+          timeoutMs
+        );
+      });
+      try {
+        await Promise.race([fn(), timeoutPromise]);
+      } finally {
+        clearTimeout(timeoutHandle!);
+      }
+    } else {
+      await fn();
+    }
+  } catch (error: any) {
+    logger.error({ err: error, jobName, source }, "managed job failed or timed out");
+    if (error?.message?.startsWith("job_timeout_exceeded")) {
+      const now = DateTime.utc().toISO();
+      await db.from("job_runs").insert({
+        job_name: jobName,
+        status: "failed",
+        started_at: now,
+        finished_at: now,
+        error_message: error.message
+      }).catch(() => {});
+    }
   } finally {
     runningJobs.delete(jobName);
     maybeExitForRecycle();
@@ -119,7 +147,7 @@ async function runNow(job: RunNowJob) {
     }
   }
   if (job === "cme" || job === "both") {
-    await runManagedJob("cme_30m", "run_now", () => runCme(anchor));
+    await runManagedJob("cme_30m", "run_now", () => runCme(anchor), workerConfig.cmeJobTimeoutMs);
   }
 }
 
@@ -136,7 +164,7 @@ if (workerConfig.relationEnabled) {
 cron.schedule(workerConfig.cmeCron, async () => {
   if (recycleRequested) return;
   const anchor = DateTime.now().setZone(BKK_ZONE).startOf("minute");
-  await runManagedJob("cme_30m", "cron", () => runCme(anchor));
+  await runManagedJob("cme_30m", "cron", () => runCme(anchor), workerConfig.cmeJobTimeoutMs);
 }, { timezone: BKK_ZONE });
 
 cron.schedule(workerConfig.retentionCron, async () => {

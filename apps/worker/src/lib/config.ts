@@ -68,6 +68,7 @@ export const workerConfig = {
   cmeRequirePositiveDte: (process.env.CME_REQUIRE_POSITIVE_DTE || "true") === "true",
   cmeExtractMaxAttempts: Number(process.env.CME_EXTRACT_MAX_ATTEMPTS || "3"),
   cmeExtractRetryDelayMs: Number(process.env.CME_EXTRACT_RETRY_DELAY_MS || "1200"),
+  cmeJobTimeoutMs: Number(process.env.CME_JOB_TIMEOUT_MS || "480000"),
   relationStaleMinutes: Number(process.env.RELATION_STALE_MINUTES || "35"),
   cmeStaleMinutes: Number(process.env.CME_STALE_MINUTES || "35"),
   jobRunsRetentionDays: Number(process.env.JOB_RUNS_RETENTION_DAYS || "30"),
