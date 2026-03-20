@@ -119,13 +119,17 @@ async function runManagedJob(
     logger.error({ err: error, jobName, source }, "managed job failed or timed out");
     if (error?.message?.startsWith("job_timeout_exceeded")) {
       const now = DateTime.utc().toISO();
-      await db.from("job_runs").insert({
-        job_name: jobName,
-        status: "failed",
-        started_at: now,
-        finished_at: now,
-        error_message: error.message
-      }).catch(() => {});
+      try {
+        await db.from("job_runs").insert({
+          job_name: jobName,
+          status: "failed",
+          started_at: now,
+          finished_at: now,
+          error_message: error.message
+        });
+      } catch {
+        // best effort
+      }
     }
   } finally {
     runningJobs.delete(jobName);
